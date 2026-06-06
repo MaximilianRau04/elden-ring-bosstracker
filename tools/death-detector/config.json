@@ -1,0 +1,29 @@
+{
+  "websocket_host": "127.0.0.1",
+  "websocket_port": 8777,
+
+  "monitor": 1,
+  "region": null,
+
+  "capture_fps": 3,
+  "death_cooldown_seconds": 6.0,
+
+  "phrases": ["DU BIST GESTORBEN"],
+  "key_token": "GESTORBEN",
+  "match_min_ratio": 0.8,
+
+  "ocr_lang": "deu",
+  "tesseract_cmd": null,
+
+  "gate_dark_ratio": 0.5,
+  "gate_red_ratio": 0.0015,
+
+  "detect_active_boss": true,
+  "healthbar_region": null,
+  "active_boss_min_ratio": 0.72,
+  "active_boss_confirm_frames": 2,
+  "hb_gate_text_min": 0.001,
+  "hb_gate_text_max": 0.5,
+
+  "debug": false
+}
