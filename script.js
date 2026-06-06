@@ -485,6 +485,26 @@ function updateMenuDisplay() {
     pinIcon.textContent  = "📌";
     pinLabel.textContent = "Anpinnen";
   }
+
+  var activeBtn   = document.getElementById("menu-active-btn");
+  var activeLabel = document.getElementById("menu-active-label");
+  var isActive    = activeBoss.boss === menuState.boss && activeBoss.area === menuState.area;
+  if (activeBtn) {
+    activeBtn.className     = "boss-menu-action-btn" + (isActive ? " active" : "");
+    activeLabel.textContent = isActive ? "Ist aktiver Boss (aufheben)" : "Als aktiven Boss setzen";
+  }
+}
+
+function menuToggleActive() {
+  var isActive = activeBoss.boss === menuState.boss && activeBoss.area === menuState.area;
+  if (isActive) {
+    setActiveBoss(null, null);
+    showToast("🎯 Aktiver Boss aufgehoben", 2000);
+  } else {
+    setActiveBoss(menuState.area, menuState.boss);
+    showToast("🎯 Aktiver Boss: " + menuState.boss, 2000);
+  }
+  updateMenuDisplay();
 }
 
 function menuAdjustDeaths(delta) {
@@ -585,6 +605,11 @@ function applyBossChange(area, boss, field, value) {
 
   if (field === "done" && value === true && !oldDone && MAIN_BOSSES.has(boss)) {
     showToast("✔ " + boss + " besiegt!");
+  }
+
+  // A defeated boss is no longer the one you're fighting → release it.
+  if (field === "done" && value === true && activeBoss.boss === boss && activeBoss.area === area) {
+    setActiveBoss(null, null);
   }
 
   // rebuild the pinned section when pin status changes
@@ -1201,6 +1226,28 @@ function toggleArea(areaName) {
 function setActiveBoss(area, boss) {
   activeBoss = { area: area, boss: boss };
   saveProgress();
+  updateActiveBossDisplay();
+}
+
+function clearActiveBoss() {
+  setActiveBoss(null, null);
+  showToast("🎯 Aktiver Boss aufgehoben — Tode zählen als Feldtod", 2200);
+}
+
+// Show/hide the active-boss bar at the top.
+function updateActiveBossDisplay() {
+  var bar = document.getElementById("active-boss-bar");
+  if (!bar) return;
+  if (activeBoss.boss) {
+    bar.style.display = "flex";
+    var nameEl = document.getElementById("active-boss-name");
+    if (nameEl) {
+      nameEl.textContent = activeBoss.boss;
+      nameEl.className = "active-boss-name" + (MAIN_BOSSES.has(activeBoss.boss) ? " main" : "");
+    }
+  } else {
+    bar.style.display = "none";
+  }
 }
 
 // "You died" detected → attribute the death to the active boss (else field death).
@@ -1220,6 +1267,8 @@ function registerDeath() {
 function registerBossKill(bossName) {
   var target = bossName ? findBoss(bossName) : (activeBoss.boss ? { area: activeBoss.area, boss: activeBoss.boss } : null);
   if (!target) { console.warn("[Automation] Boss nicht gefunden:", bossName); return false; }
+  // Already defeated → no-op (keeps the save-watcher sync from re-rendering everything).
+  if (getBossProgress(target.area, target.boss).done) return true;
   applyBossChange(target.area, target.boss, "done", true);
   return true;
 }
@@ -1255,6 +1304,64 @@ window.ERTracker = {
   }
 };
 
+// ═══════════════════════════════════════════════════════════════════════════
+// AUTOMATION BRIDGES (local helper tools → ERTracker)
+//   - death-detector (tools/death-detector, port 8777): screen OCR → deaths
+//   - save-watcher   (tools/save-watcher,   port 8778): save file → boss kills
+//   Both are optional. When a tool isn't running the bridge just keeps retrying
+//   quietly every few seconds — no errors, nothing happens.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Generic auto-reconnecting WebSocket bridge.
+function makeBridge(url, onMessage) {
+  var socket = null, retry = null;
+
+  function connect() {
+    try { socket = new WebSocket(url); }
+    catch (e) { schedule(); return; }
+
+    socket.onopen    = function() { console.log("[Bridge] connected to " + url); };
+    socket.onmessage = function(ev) {
+      var msg;
+      try { msg = JSON.parse(ev.data); } catch (e) { return; }
+      onMessage(msg);
+    };
+    socket.onclose   = function() { schedule(); };
+    socket.onerror   = function() { try { socket.close(); } catch (e) {} };
+  }
+
+  function schedule() {
+    if (retry) return;
+    retry = setTimeout(function() { retry = null; connect(); }, 4000);
+  }
+
+  return { connect: connect };
+}
+
+var deathBridge = makeBridge("ws://127.0.0.1:8777", function(msg) {
+  if (!msg) return;
+  if (msg.type === "death") {
+    registerDeath();
+  } else if (msg.type === "active_boss" && msg.boss) {
+    // boss health-bar name OCR → set the active boss automatically
+    var t = findBoss(msg.boss);
+    if (t && !(activeBoss.boss === t.boss && activeBoss.area === t.area)) {
+      setActiveBoss(t.area, t.boss);
+      showToast("🎯 Aktiver Boss: " + t.boss, 2000);
+    }
+  }
+});
+
+var killBridge = makeBridge("ws://127.0.0.1:8778", function(msg) {
+  if (!msg) return;
+  if (msg.type === "kill" && msg.boss) {
+    registerBossKill(msg.boss);
+  } else if (msg.type === "sync" && Array.isArray(msg.bosses)) {
+    // freshly loaded page catching up on already-defeated bosses
+    msg.bosses.forEach(function(name) { registerBossKill(name); });
+  }
+});
+
 function init() {
   loadProgress();
 
@@ -1276,6 +1383,11 @@ function init() {
 
   updateTimerDisplay();
   if (timerVisible && timerStartTs > 0) startTimerTick();
+
+  updateActiveBossDisplay();
+
+  deathBridge.connect();
+  killBridge.connect();
 
   processData();
 

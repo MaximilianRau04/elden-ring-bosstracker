@@ -134,6 +134,14 @@
     </div>
   </div>
 
+  <!-- ── ACTIVE BOSS (deaths get attributed here) ── -->
+  <div class="active-boss-bar" id="active-boss-bar" style="display:none;">
+    <span class="active-boss-label">🎯 Aktiver Boss:</span>
+    <span class="active-boss-name" id="active-boss-name">–</span>
+    <span class="active-boss-hint">erkannte Tode werden hier gezählt</span>
+    <button class="active-boss-clear" id="active-boss-clear" onclick="clearActiveBoss()" data-tip="Aktiven Boss aufheben (Tode zählen dann als Feldtod)" data-tip-always="1">✕</button>
+  </div>
+
   <div class="controls-bar">
     <span class="ctrl-label">Anzeige:</span>
     <button class="toggle-btn" id="btn-basegame" onclick="toggleFlag('base')">
@@ -258,6 +266,10 @@
       <button class="boss-menu-action-btn" id="menu-pin-btn" onclick="menuTogglePin()">
         <span class="action-icon" id="menu-pin-icon">📌</span>
         <span id="menu-pin-label">Anpinnen</span>
+      </button>
+      <button class="boss-menu-action-btn" id="menu-active-btn" onclick="menuToggleActive()">
+        <span class="action-icon" id="menu-active-icon">🎯</span>
+        <span id="menu-active-label">Als aktiven Boss setzen</span>
       </button>
     </div>
   </div>

@@ -899,6 +899,66 @@ body.filter-open #chart-section {
 .fdeath-btn.fdeath-minus:hover { background: rgba(196,74,58,0.15); }
 
 /* ═══════════════════════════════════════════════════════════════════════
+   ACTIVE BOSS BAR – shows which boss detected deaths get attributed to
+═══════════════════════════════════════════════════════════════════════ */
+
+.active-boss-bar {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 9px 18px;
+  margin-bottom: 14px;
+  background: var(--bg-card);
+  border: 1px solid rgba(201, 164, 74, 0.32);
+  border-radius: var(--radius);
+  box-shadow: inset 0 0 22px rgba(201, 164, 74, 0.06);
+}
+
+.active-boss-label {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--parchment-dim);
+  white-space: nowrap;
+}
+
+.active-boss-name {
+  font-family: 'Cinzel', serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gold-light);
+}
+.active-boss-name.main {
+  text-shadow: 0 0 10px rgba(201, 164, 74, 0.4);
+}
+
+.active-boss-hint {
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-style: italic;
+  font-size: 12px;
+  color: var(--parchment-dim);
+  opacity: 0.8;
+}
+
+.active-boss-clear {
+  width: 24px; height: 24px;
+  border-radius: 5px;
+  border: 1px solid rgba(196, 74, 58, 0.3);
+  background: rgba(196, 74, 58, 0.1);
+  color: var(--red-bright);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s ease, transform 0.1s ease;
+  flex-shrink: 0;
+}
+.active-boss-clear:hover  { background: rgba(196, 74, 58, 0.22); }
+.active-boss-clear:active { transform: scale(0.9); }
+
+/* ═══════════════════════════════════════════════════════════════════════
    EDITOR TOOLBOX – Icon strip + flyout panels
 ═══════════════════════════════════════════════════════════════════════ */
 
