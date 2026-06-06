@@ -1,0 +1,13 @@
+{
+  "websocket_host": "127.0.0.1",
+  "websocket_port": 8778,
+
+  "save_path": null,
+  "slot": null,
+
+  "poll_seconds": 3.0,
+  "scan_settle_seconds": 4.0,
+  "sync_on_connect": true,
+
+  "debug": false
+}

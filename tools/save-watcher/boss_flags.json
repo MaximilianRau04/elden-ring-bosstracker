@@ -1,0 +1,4 @@
+{
+  "_comment": "Learned boss -> event-flag bit mappings. Populated by `python save_watcher.py --scan \"Boss Name\"`.",
+  "mappings": []
+}
