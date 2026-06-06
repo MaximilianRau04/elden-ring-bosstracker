@@ -41,7 +41,7 @@ except ImportError as e:
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(HERE, "config.json")
-BOSSES_JS = os.path.normpath(os.path.join(HERE, "..", "..", "bosses.js"))
+BOSSES_JS = os.path.normpath(os.path.join(HERE, "..", "..", "frontend", "data", "bosses.js"))
 
 
 # ─── Config ──────────────────────────────────────────────────────────────────

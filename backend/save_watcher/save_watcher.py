@@ -47,7 +47,7 @@ except ImportError as e:
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(HERE, "config.json")
 FLAGS_PATH = os.path.join(HERE, "boss_flags.json")
-BOSSES_JS = os.path.normpath(os.path.join(HERE, "..", "..", "bosses.js"))
+BOSSES_JS = os.path.normpath(os.path.join(HERE, "..", "..", "frontend", "data", "bosses.js"))
 
 # Publicly known Elden Ring save AES-128-CBC key (used by every save tool).
 ER_KEY = bytes(
@@ -150,21 +150,32 @@ def parse_bnd4_entries(data):
     for i in range(file_count):
         off = base + i * header_size
         comp_size = int.from_bytes(data[off + 0x08:off + 0x10], "little")
-        data_off = int.from_bytes(data[off + 0x18:off + 0x1C], "little")
+        data_off = int.from_bytes(data[off + 0x10:off + 0x14], "little")
         if 0 < data_off <= len(data) and 0 < comp_size <= len(data):
             entries.append((data_off, comp_size))
     return entries
 
 
 def decrypt_entry(raw):
-    """raw = [16-byte IV][AES-128-CBC ciphertext]. Returns the decrypted payload
-    WITHOUT the leading 16-byte checksum, plus whether that checksum matched."""
+    """Return (payload, checksum_ok) for one save slot entry.
+
+    Two on-disk layouts are supported; the payload is always the slot data
+    WITHOUT the leading 16-byte MD5 checksum:
+      - Encrypted (retail Steam): [16-byte IV][AES-128-CBC ciphertext] that
+        decrypts to [16-byte MD5][payload].
+      - Unencrypted (some offline builds store the slot in the clear):
+        [16-byte MD5][payload] directly — no IV, no AES.
+    The MD5 over the payload tells the two apart with no guessing."""
+    # Unencrypted: the leading 16 bytes are the MD5 of the rest.
+    body = raw[16:]
+    if hashlib.md5(body).digest() == raw[:16]:
+        return body, True
+    # Encrypted: decrypt, then the leading 16 bytes are the MD5 of the rest.
     iv = raw[:16]
     cipher = AES.new(ER_KEY, AES.MODE_CBC, iv)
     clear = cipher.decrypt(raw[16:])
-    stored = clear[:16]
     payload = clear[16:]
-    ok = hashlib.md5(payload).digest() == stored
+    ok = hashlib.md5(payload).digest() == clear[:16]
     return payload, ok
 
 

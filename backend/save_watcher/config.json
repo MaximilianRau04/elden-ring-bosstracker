@@ -3,7 +3,7 @@
   "websocket_port": 8778,
 
   "save_path": null,
-  "slot": null,
+  "slot": 1,
 
   "poll_seconds": 3.0,
   "scan_settle_seconds": 4.0,
