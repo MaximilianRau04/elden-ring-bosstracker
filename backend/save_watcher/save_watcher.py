@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # ═══════════════════════════════════════════════════════════════════════════
-#  ELDEN RING — SAVE WATCHER (boss-kill detector)
+#  ELDEN RING - SAVE WATCHER (boss-kill detector)
 #
 #  Reads the encrypted save file ER0000.sl2, watches the per-character event
 #  flags, and emits one "kill" event per newly-defeated boss over a local
@@ -13,7 +13,7 @@
 #  safe as long as you run it while the game is closed OR only read (we never
 #  write the save back).
 #
-#  Which bit means which boss is not hard-coded — you teach it once with the
+#  Which bit means which boss is not hard-coded - you teach it once with the
 #  --scan mode (kill the boss, the tool finds the flag that flipped).
 #
 #  Usage:
@@ -258,7 +258,7 @@ class Bridge:
     async def _handler(self, ws):
         self.clients.add(ws)
         addr = getattr(ws, "remote_address", "?")
-        print("[ws] client connected (%s) — %d total" % (addr, len(self.clients)))
+        print("[ws] client connected (%s) - %d total" % (addr, len(self.clients)))
         try:
             if self.sync_provider:
                 names = self.sync_provider()
@@ -267,7 +267,7 @@ class Bridge:
             await ws.wait_closed()
         finally:
             self.clients.discard(ws)
-            print("[ws] client disconnected — %d total" % len(self.clients))
+            print("[ws] client disconnected - %d total" % len(self.clients))
 
     async def _serve(self):
         self.loop = asyncio.get_running_loop()
@@ -323,7 +323,7 @@ def watch_loop(cfg, bridge, save_path, mappings):
             break
         time.sleep(1.0)
     if not payload:
-        print("[watch] could not read the save yet — will keep trying.")
+        print("[watch] could not read the save yet - will keep trying.")
 
     state = {}
     if payload:
@@ -383,7 +383,7 @@ def cmd_info(cfg, save_path):
     print("save file   : %s" % save_path)
     slots = read_slots(save_path)
     if not slots:
-        print("No character slots found — is this a valid ER0000.sl2?")
+        print("No character slots found - is this a valid ER0000.sl2?")
         return
     print("slots found : %d" % len(slots))
     for s in slots:
@@ -397,7 +397,7 @@ def cmd_info(cfg, save_path):
         print("active slot : %d (override with \"slot\" in config.json)"
               % active["index"])
     if not all(s["checksum_ok"] for s in slots if slot_looks_used(s["payload"])):
-        print("\n! Checksum mismatch on a used slot — decryption may be off; "
+        print("\n! Checksum mismatch on a used slot - decryption may be off; "
               "scanning will be unreliable.")
 
 
@@ -409,7 +409,7 @@ def cmd_scan(cfg, save_path, boss_name):
         print("Note: \"%s\" is not an exact name in bosses.js." % boss_name)
         if close:
             print("Did you mean: %s" % ", ".join('"%s"' % c for c in close))
-        print("(Continuing anyway — the web app fuzzy-matches names.)\n")
+        print("(Continuing anyway - the web app fuzzy-matches names.)\n")
 
     settle = float(cfg.get("scan_settle_seconds", 4.0))
 
@@ -442,7 +442,7 @@ def cmd_scan(cfg, save_path, boss_name):
               "(rest at a grace or wait for the autosave icon).")
         return
     if len(rising) > 64:
-        print("\nDetected %d candidate bits — that's too noisy to be reliable. "
+        print("\nDetected %d candidate bits - that's too noisy to be reliable. "
               "Re-run and try to change as little else as possible (don't pick "
               "up loot / open menus between snapshots)." % len(rising))
         return
@@ -524,7 +524,7 @@ def main():
 
     mappings = load_mappings()
     if not mappings:
-        print("! No boss flags learned yet — nothing to watch.\n"
+        print("! No boss flags learned yet - nothing to watch.\n"
               "  Teach one with:  python save_watcher.py --scan \"Boss Name\"\n"
               "  (The server still starts so the web app can connect.)\n")
 

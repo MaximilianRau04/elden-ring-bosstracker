@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-//  ELDEN RING BOSS TRACKER — local version
+//  ELDEN RING BOSS TRACKER - local version
 //  No external services (no Twitch, no Google Sheet, no Bingo).
 //  Boss list: bosses.js (window.BOSS_DATA)
 //  Progress:  localStorage (see PROGRESS / saveProgress / loadProgress)
@@ -836,8 +836,8 @@ function renderRanking(allBosses) {
   if (subtitle) {
     var doneBossCount = allBosses.filter(function(b) { return b.done; }).length;
     subtitle.textContent = top.length > 0
-      ? "— Top " + top.length + " von " + doneBossCount + " erledigten Bossen"
-      : "— noch keine Tode erfasst.";
+      ? "- Top " + top.length + " von " + doneBossCount + " erledigten Bossen"
+      : "- noch keine Tode erfasst.";
   }
 
   var listEl = document.getElementById("ranking-list");
@@ -904,7 +904,7 @@ function renderChart(allBosses) {
   var dayCount  = dates.length;
   var bossCount = allBosses.filter(function(b){ return b.done && b.date; }).length;
   document.getElementById("chart-subtitle").textContent =
-    "— " + dayCount + (dayCount === 1 ? " Tag, " : " Tage, ") + bossCount + (bossCount === 1 ? " Boss erledigt" : " Bosse erledigt");
+    "- " + dayCount + (dayCount === 1 ? " Tag, " : " Tage, ") + bossCount + (bossCount === 1 ? " Boss erledigt" : " Bosse erledigt");
 
   var counts   = dates.map(function(d) { return byDate[d].length; });
   var bossList = dates.map(function(d) { return byDate[d]; });
@@ -1231,7 +1231,7 @@ function setActiveBoss(area, boss) {
 
 function clearActiveBoss() {
   setActiveBoss(null, null);
-  showToast("🎯 Aktiver Boss aufgehoben — Tode zählen als Feldtod", 2200);
+  showToast("🎯 Aktiver Boss aufgehoben - Tode zählen als Feldtod", 2200);
 }
 
 // Show/hide the active-boss bar at the top.
@@ -1306,10 +1306,10 @@ window.ERTracker = {
 
 // ═══════════════════════════════════════════════════════════════════════════
 // AUTOMATION BRIDGES (local helper tools → ERTracker)
-//   - death-detector (tools/death-detector, port 8777): screen OCR → deaths
-//   - save-watcher   (tools/save-watcher,   port 8778): save file → boss kills
+//   - death-detector (backend/death_detector, port 8777): screen OCR → deaths
+//   - save-watcher   (backend/save_watcher,   port 8778): save file → boss kills
 //   Both are optional. When a tool isn't running the bridge just keeps retrying
-//   quietly every few seconds — no errors, nothing happens.
+//   quietly every few seconds - no errors, nothing happens.
 // ═══════════════════════════════════════════════════════════════════════════
 
 // Generic auto-reconnecting WebSocket bridge.
