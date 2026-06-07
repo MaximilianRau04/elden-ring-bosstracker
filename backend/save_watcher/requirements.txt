@@ -1,2 +1,0 @@
-pycryptodome>=3.18
-websockets>=11.0
