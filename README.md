@@ -2,7 +2,7 @@
 
 This repository contains two cooperating parts:
 
-- A lightweight Web UI (Boss Tracker) that displays boss progress and receives events.
+- A lightweight Web UI (Boss Tracker) that displays boss progress and receives events, plus a stream overlay (`frontend/overlay`) that mirrors the same progress for OBS.
 - A screen-based detector using OCR (`backend/death_detector`) that detects deaths, the active boss name, and boss kills — all from screen pixels.
 
 The components communicate over a local WebSocket bridge; the web UI listens and reacts to the events described below.
@@ -43,20 +43,51 @@ Persistence
 - You can still open the static files without the server (e.g.
   `python3 -m http.server`), in which case progress lives only in localStorage.
 
+Stream Overlay (frontend/overlay)
+
+A transparent overlay for OBS that mirrors the tracker's progress (deaths, boss
+completion, pinned bosses, timer) with kill animations. It is a read-only view
+of the same on-disk store, served by the same server.
+
+OBS setup
+
+- Add a Browser Source pointing at `http://127.0.0.1:8000/overlay/`.
+- Display modes are chosen via URL parameters, so you can add several sources:
+  - `…/overlay/` — normal scrolling boss list.
+  - `…/overlay/?view=simple` — compact view (header + pinned bosses only).
+  - `…/overlay/?mode=top` — Top 10 most-died bosses.
+- Content and filters always mirror the tracker UI live: toggle Base/DLC, the
+  open/done filters, pin a boss, or start the timer in the tracker and the
+  overlay follows within ~1.5s.
+
+Data flow (important)
+
+The overlay does not talk to the detector directly. The chain is:
+
+```
+detector (ws 8777) → tracker page (attributes the event, saves progress)
+                   → server (progress.json) → overlay (polls /api/progress)
+```
+
+So for automatic live updates the tracker page must be open somewhere (a
+background tab is fine) — it holds the attribution logic; the detector alone
+does not write progress. Manual edits in the tracker show up in the overlay too.
+
 Death Detector (backend/death_detector)
 
 Requirements
 
-- Python 3.9+ and the Python dependencies listed in `backend/death_detector/requirements.txt`.
+- Python 3.9+ and the Python dependencies listed in `backend/requirements.txt`.
 - Tesseract OCR with the German language pack installed.
 
 Install Python deps:
 
 ```bash
-cd backend/death_detector
+cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+cd death_detector
 ```
 
 Tesseract

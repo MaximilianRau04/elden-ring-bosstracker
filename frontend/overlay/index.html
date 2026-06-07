@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Elden Ring Overlay</title>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  font-family: Georgia, serif;
+  color: #e6dcc8;
+  overflow: hidden;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+}
+
+.wrapper {
+  position: relative;
+  width: 420px;
+  height: auto;
+  max-height: 560px;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  background: linear-gradient(
+    rgba(0, 0, 0, 0.75),
+    rgba(10, 10, 10, 0.85)
+  );
+
+  border-radius: 14px;
+
+  box-shadow:
+    0 0 25px rgba(0, 0, 0, 0.6),
+    0 0 12px rgba(201, 164, 74, 0.4);
+
+  backdrop-filter: blur(4px);
+}
+
+.wrapper::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: 14px;
+  pointer-events: none;
+
+  box-shadow:
+    inset 0 0 30px rgba(201, 164, 74, 0.15),
+    inset 0 0 60px rgba(0, 0, 0, 0.7);
+}
+
+.wrapper::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: 14px;
+  pointer-events: none;
+  border: 2px solid #c9a44a;
+  box-sizing: border-box;
+}
+
+.wrapper.simple-mode {
+  width: max-content;
+  min-width: 150px;
+  max-width: 280px;
+  height: auto;
+  padding: 10px 12px;
+}
+
+.wrapper.simple-mode .header-stats {
+  flex-direction: column;
+  gap: 6px;
+  font-size: 20px;
+  margin-bottom: 3px;
+}
+
+.wrapper.simple-mode #boss-timer {
+  font-size: 20px !important;
+  margin-bottom: 0 !important;
+  margin-top: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scroll {
+  overflow: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.scroll::-webkit-scrollbar {
+  width: 0;
+}
+
+#content::after {
+content: "";
+display: block;
+height: 14px;
+}
+
+.area {
+  margin-bottom: 22px;
+}
+
+.area-title {
+  font-size: 18px;
+  padding-bottom: 3px;
+  margin-bottom: 4px;
+  position: relative;
+}
+
+.area-title::after {
+  content: "";
+  display: block;
+  width: 85%;
+  height: 1px;
+  background: #7d6a3d;
+  margin-top: 3px;
+}
+
+.area-progress {
+  font-size: 14px;
+  opacity: 0.7;
+  margin-bottom: 6px;
+}
+
+.boss {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 2px 0;
+}
+
+.boss-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.boss.done .boss-name {
+  opacity: 0.45;
+}
+
+.deaths {
+  color: #c9a44a;
+  min-width: 45px;
+  text-align: left;
+  margin-right: 10px;
+}
+
+.main-boss {
+  color: #e3b873;
+  font-weight: bold;
+}
+
+.pinned-container {
+  border-bottom: 2px solid #7d6a3d;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.pinned-boss {
+  background: rgba(201, 164, 74, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  animation: pinnedPulse 2.5s ease-in-out infinite;
+}
+
+.pinned-boss .boss-name {
+  overflow: hidden;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  text-overflow: clip;
+}
+
+.pinned-boss .boss-name .ticker-inner {
+  display: inline-block;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+.header-stats {
+  font-size: 18px;
+  margin-bottom: 10px;
+  color: #c9a44a;
+  display: flex;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+#boss-timer {
+  flex-shrink: 0;
+}
+
+/* ── TOP-DEATHS MODE ── */
+#top-deaths-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.top-deaths-title {
+  font-size: 16px;
+  color: #c9a44a;
+  letter-spacing: 2px;
+  text-align: center;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.top-deaths-title::after {
+  content: "";
+  display: block;
+  width: 80%;
+  margin: 4px auto 0;
+  height: 1px;
+  background: #7d6a3d;
+}
+
+.top-deaths-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.top-deaths-list li {
+  display: flex;
+  align-items: center;
+  padding: 5px 4px;
+  border-bottom: 1px solid rgba(125, 106, 61, 0.3);
+}
+
+.top-deaths-list li:last-child {
+  border-bottom: none;
+}
+
+.top-rank {
+  font-size: 13px;
+  color: #7d6a3d;
+  min-width: 26px;
+  flex-shrink: 0;
+}
+
+.top-rank-1 { color: #ffd700; font-weight: bold; font-size: 15px; }
+.top-rank-2 { color: #c0c0c0; font-weight: bold; }
+.top-rank-3 { color: #cd7f32; font-weight: bold; }
+
+.top-deaths-count {
+  color: #c9a44a;
+  min-width: 40px;
+  text-align: right;
+  margin-right: 10px;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.top-boss-name {
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.top-boss-name.is-main {
+  color: #e3b873;
+  font-weight: bold;
+}
+
+.top-boss-name.is-done {
+  opacity: 0.5;
+}
+
+.top-deaths-bar-wrap {
+  width: 100%;
+  height: 3px;
+  background: rgba(125,106,61,0.25);
+  border-radius: 2px;
+  margin-top: 3px;
+}
+
+.top-deaths-bar {
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(to right, #7d6a3d, #c9a44a);
+  transition: width 0.6s ease;
+}
+/* ────────────────── */
+
+@keyframes deathPulse {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.25); color: #e05a4f; }
+  60%  { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+.death-animate {
+  animation: deathPulse 0.8s ease-out;
+}
+
+@keyframes bossPulse {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.2); color: #e3b873; }
+  60%  { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+@keyframes pinnedPulse {
+  0%   { box-shadow: 0 0 4px rgba(201,164,74,0.15); }
+  50%  { box-shadow: 0 0 18px rgba(201,164,74,0.45); }
+  100% { box-shadow: 0 0 4px rgba(201,164,74,0.15); }
+}
+
+.boss-animate {
+  animation: bossPulse 0.8s ease-out;
+}
+
+.victory-overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background: radial-gradient(circle, rgba(201,164,74,0.3), rgba(0,0,0,0.9));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 100;
+}
+
+.victory-text {
+  font-size: 42px;
+  color: #e3b873;
+  text-shadow: 0 0 20px #c9a44a, 0 0 40px #c9a44a;
+  letter-spacing: 4px;
+  transform: scale(0.8);
+  opacity: 0;
+  text-align: center;
+}
+
+.victory-show {
+  animation: overlayFade 3s ease forwards;
+}
+
+.victory-text-show {
+  animation: textPop 3s ease forwards;
+}
+
+@keyframes overlayFade {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes textPop {
+  0% { opacity: 0; transform: scale(0.6); }
+  20% { opacity: 1; transform: scale(1.1); }
+  80% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.9); }
+}
+
+.particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #c9a44a;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.9;
+  animation: explode 1s ease-out forwards;
+}
+
+@keyframes explode {
+  0% { transform: translate(0,0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--x), var(--y)) scale(0.2); opacity: 0; }
+}
+
+.wrapper.simple-mode .pinned-container {
+  border-bottom: none;
+  margin-top: 8px;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.wrapper.simple-mode .pinned-boss {
+  font-size: 16px;
+  padding: 3px 6px;
+  margin-bottom: 2px;
+  animation: none;
+}
+
+.wrapper.simple-mode .pinned-boss .deaths {
+  min-width: 30px;
+  font-size: 18px;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.wrapper.simple-mode .pinned-boss .boss-name {
+  font-size: 16px;
+}
+
+</style>
+</head>
+
+<body>
+<div class="wrapper">
+  <div class="header-stats">
+    <span id="total-deaths">💀 Tode: 0</span>
+    <span id="total-boss-progress">🏆 Bosse: 0 / 0</span>
+  </div>
+
+  <div id="boss-timer" style="font-size:18px; margin-bottom:12px; color:#c9a44a; display:none;">
+    ⏳ Aktueller Boss: 00:00:00
+  </div>
+
+  <div id="pinned-area" class="pinned-container" style="display: none;"></div>
+
+  <div class="scroll" id="content"></div>
+
+  <!-- TOP-DEATHS PANEL (Y2 = TRUE) -->
+  <div id="top-deaths-container" style="display:none;">
+    <div class="top-deaths-title">💀 TOP 10 — MEISTE TODE</div>
+    <ul class="top-deaths-list" id="top-deaths-list"></ul>
+  </div>
+
+  <div class="victory-overlay" id="victoryOverlay">
+    <div class="victory-text" id="victoryText">BOSS ERLEDIGT</div>
+  </div>
+</div>
+
+<script src="/data/bosses.js"></script>
+<script>
+
+const VICTORY_DELAY = 2000;
+const PARTICLE_COUNT = 50;
+
+let previousBossStates = {};
+let autoScrollPaused = false;
+let topDeathsModeActive = false;
+
+let lastGlobalDeaths = 0;
+let lastDoneBosses = 0;
+let lastTotalBosses = 0;
+
+const MAIN_BOSSES = [
+  "Margit, das Grausame Mal",
+  "Godrick der Verpflanzte",
+  "Rennala, Königin des Vollmonds",
+  "Roter Wolf von Radagon",
+  "Sternengeißel Radahn",
+  "Götterverschlingende Schlange / Rykard, Fürst der Blasphemie",
+  "Drachenbaumwächter",
+  "Godfrey, Erster Eldenfürst",
+  "Morgott, König des Mals",
+  "Mohg, Fürst des Blutes",
+  "Feuerriese",
+  "Bestienkleriker / Maliketh, die Schwarze Klinge",
+  "Duo der Götterskalpe",
+  "Malenia, Klinge von Miquella",
+  "Godfrey, Erster Eldenfürst (Hoarah Loux)",
+  "Sir Gideon Ofnir, der Allwissende",
+  "Radagon von der Goldenen Ordnung / Eldenbestie",
+  "Rellana, Zwillings-Mondritterin",
+  "Göttliche Bestie - Tanzender Löwe",
+  "Messmer der Pfähler + Böse Schlange Messmer",
+  "Bayle der Schreckliche",
+  "Midra, Herr der Rasenden Flamme",
+  "Kommandant Gaius",
+  "Romina, Heilige der Knospe",
+  "Radahn, versprochener Gemahl + Radahn, Miquellas Gemahl",
+];
+
+const STORAGE_KEY = "er_bosstracker_v1";
+
+// Display mode is chosen via URL params, so you can add several OBS browser
+// sources (e.g. overlay/?mode=top, overlay/?view=simple). Content and filters
+// always mirror the tracker (read from the shared progress store).
+const _params = new URLSearchParams(location.search);
+const _mode   = (_params.get("mode") || "").toLowerCase();
+const SIMPLE_VIEW = (_params.get("view") || "").toLowerCase() === "simple";
+topDeathsModeActive = _mode === "top" || _mode === "topdeaths";
+
+// Read the shared progress: prefer the on-disk store (server), fall back to the
+// localStorage copy (the overlay is the same origin as the tracker).
+function readLocalProgress() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) { return {}; }
+}
+function fetchProgress() {
+  return fetch("/api/progress", { cache: "no-store" })
+    .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    .then(p => (p && p.bosses) ? p : readLocalProgress())
+    .catch(readLocalProgress);
+}
+
+/* ================= TIMER ENGINE ================= */
+
+let timerStartTs    = 0;
+let currentElapsed  = 0;
+let timerVisible    = false;
+let currentBossName = "Aktueller Boss"; // M3: wird überschrieben wenn befüllt
+
+function updateTimerDisplay() {
+  const timerElement = document.getElementById("boss-timer");
+  if (!timerElement) return;
+
+  timerElement.style.display = timerVisible ? "block" : "none";
+
+  const diff = timerStartTs > 0
+    ? Math.floor((currentElapsed + (Date.now() - timerStartTs)) / 1000)
+    : Math.floor(currentElapsed / 1000);
+
+  const hours   = String(Math.floor(diff / 3600)).padStart(2, "0");
+  const minutes = String(Math.floor((diff % 3600) / 60)).padStart(2, "0");
+  const seconds = String(diff % 60).padStart(2, "0");
+
+  timerElement.innerText = `⏳ ${currentBossName}: ${hours}:${minutes}:${seconds}`;
+}
+
+setInterval(updateTimerDisplay, 1000);
+
+/* ================= TOP-DEATHS RENDER ================= */
+
+function renderTopDeaths(allBosses) {
+  const container = document.getElementById("top-deaths-container");
+  const list      = document.getElementById("top-deaths-list");
+
+  const sorted = allBosses
+    .filter(b => b.deaths > 0)
+    .sort((a, b) => b.deaths - a.deaths)
+    .slice(0, 10);
+
+  const maxDeaths = sorted.length > 0 ? sorted[0].deaths : 1;
+
+  const normalize = str => str.trim().toLowerCase().replace(/\s+/g, " ");
+
+  list.innerHTML = "";
+  sorted.forEach((b, i) => {
+    const rank     = i + 1;
+    const isMain   = MAIN_BOSSES.map(normalize).includes(normalize(b.boss));
+    const rankClass = rank === 1 ? "top-rank-1" : rank === 2 ? "top-rank-2" : rank === 3 ? "top-rank-3" : "";
+    const barPct   = Math.round((b.deaths / maxDeaths) * 100);
+
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <span class="top-rank ${rankClass}">#${rank}</span>
+      <div style="flex:1; min-width:0;">
+        <div style="display:flex; align-items:center;">
+          <span class="top-deaths-count">† ${b.deaths}</span>
+          <span class="top-boss-name${isMain ? " is-main" : ""}${b.done ? " is-done" : ""}">${b.boss}</span>
+        </div>
+        <div class="top-deaths-bar-wrap">
+          <div class="top-deaths-bar" style="width:${barPct}%"></div>
+        </div>
+      </div>
+    `;
+    list.appendChild(li);
+  });
+
+  container.style.display = "flex";
+}
+
+/* ================= DATA LOAD ================= */
+
+async function loadData() {
+  const pinnedArea   = document.getElementById("pinned-area");
+  const content      = document.getElementById("content");
+  const wrapper      = document.querySelector(".wrapper");
+  const topContainer = document.getElementById("top-deaths-container");
+
+  const progress     = await fetchProgress();
+  const bossesData   = window.BOSS_DATA      || [];
+  const prog         = progress.bosses       || {};
+  const ui           = progress.ui           || {};
+  const fieldD       = progress.fieldDeaths  || { base: 0, dlc: 0 };
+  const timer        = progress.timer        || {};
+  const collapsedMap = progress.collapsed    || {};
+
+  // filters mirror the tracker UI
+  const baseGameFlag = ui.showBase !== false;
+  const dlcFlag      = ui.showDLC  !== false;
+  const onlyOpen     = !!ui.showOnlyOpen;
+  const onlyDone     = !!ui.showOnlyDone;
+  const onlyMain     = !!ui.showOnlyMain;
+  const simpleView   = SIMPLE_VIEW;
+
+  // timer mirrors the tracker
+  timerStartTs   = Number(timer.startTs) || 0;
+  currentElapsed = Number(timer.elapsed) || 0;
+  timerVisible   = !!timer.visible;
+  const rawLabel = timer.label ? String(timer.label).trim() : "";
+  currentBossName = rawLabel || "Aktueller Boss";
+
+  const normalize  = str => str.trim().toLowerCase().replace(/\s+/g, " ");
+  const isMainBoss = name => MAIN_BOSSES.map(normalize).includes(normalize(name));
+
+  const areas = {};
+  let globalTotalBosses = 0;
+  let globalDoneBosses  = 0;
+  let bossDeaths        = 0;
+  const allBossesFlat   = [];
+
+  // Walk the canonical boss list (areas in order) and look up progress per boss.
+  bossesData.forEach(areaDef => {
+    const area  = areaDef.area;
+    const isDLC = !!areaDef.isDLC;
+    if (isDLC && !dlcFlag) return;
+    if (!isDLC && !baseGameFlag) return;
+
+    (areaDef.bosses || []).forEach(boss => {
+      if (onlyMain && !isMainBoss(boss)) return;
+
+      const p      = prog[area + "|" + boss] || {};
+      const done   = !!p.done;
+      const deaths = Number(p.deaths) || 0;
+      const pinned = !!p.pinned;
+      const key    = area + "|" + boss;
+
+      // victory animation on a fresh main-boss kill
+      if (!(key in previousBossStates)) {
+        previousBossStates[key] = done;
+      } else if (!previousBossStates[key] && done && isMainBoss(boss)) {
+        setTimeout(() => {
+          document.querySelectorAll(".boss").forEach(el => {
+            if (el.querySelector(".boss-name")?.innerText === boss) triggerVictory(el);
+          });
+        }, 100);
+      }
+      previousBossStates[key] = done;
+
+      globalTotalBosses++;
+      if (done) globalDoneBosses++;
+      bossDeaths += deaths;
+
+      allBossesFlat.push({ boss, done, deaths, pinned });
+
+      if (!areas[area]) {
+        areas[area] = { total: 0, done: 0, bosses: [], collapsed: !!collapsedMap[area] };
+      }
+      areas[area].total++;
+      if (done) areas[area].done++;
+      areas[area].bosses.push({ boss, done, deaths, pinned });
+    });
+  });
+
+  // total deaths = boss deaths + field deaths (matches the tracker)
+  let fd = 0;
+  if (!onlyMain) {
+    if (baseGameFlag) fd += Number(fieldD.base) || 0;
+    if (dlcFlag)      fd += Number(fieldD.dlc)  || 0;
+  }
+  const globalDeaths = bossDeaths + fd;
+
+  // ================================
+  // HEADER
+  // ================================
+  const deathEl = document.getElementById("total-deaths");
+  if (globalDeaths !== lastGlobalDeaths) {
+    deathEl.classList.remove("death-animate");
+    void deathEl.offsetWidth;
+    deathEl.classList.add("death-animate");
+  }
+  deathEl.innerText = `💀 Tode: ${globalDeaths}`;
+  lastGlobalDeaths = globalDeaths;
+
+  const bossEl = document.getElementById("total-boss-progress");
+  if (globalDoneBosses !== lastDoneBosses || globalTotalBosses !== lastTotalBosses) {
+    bossEl.classList.remove("boss-animate");
+    void bossEl.offsetWidth;
+    bossEl.classList.add("boss-animate");
+  }
+  bossEl.innerText = `🏆 Bosse: ${globalDoneBosses} / ${globalTotalBosses}`;
+  lastDoneBosses = globalDoneBosses;
+  lastTotalBosses = globalTotalBosses;
+
+  // ================================
+  // TOP-DEATHS MODE (Y2 = TRUE)
+  // ================================
+  if (topDeathsModeActive) {
+    content.style.display = "none";
+    pinnedArea.style.display = "none";
+    wrapper.classList.remove("simple-mode");
+    renderTopDeaths(allBossesFlat);
+    return;
+  }
+
+  // Normalmodus: Top-Deaths-Panel verstecken
+  topContainer.style.display = "none";
+
+  // ================================
+  // SIMPLE VIEW
+  // ================================
+  if (simpleView) {
+    content.style.display = "none";
+    wrapper.classList.add("simple-mode");
+  } else {
+    content.style.display = "block";
+    wrapper.classList.remove("simple-mode");
+  }
+
+  // ================================
+  // BOSS-FILTER (S1 / S2)
+  // ================================
+  function bossPassesFilter(b) {
+    if (onlyOpen && !onlyDone) return !b.done;
+    if (onlyDone && !onlyOpen) return b.done;
+    return true;
+  }
+
+  // ================================
+  // RENDER PINNED BOSSES
+  // ================================
+  pinnedArea.innerHTML = "";
+  let hasPinned = false;
+
+  const allPinned = [];
+  Object.values(areas).forEach(areaData => {
+    areaData.bosses.forEach(b => {
+      if (b.pinned && bossPassesFilter(b)) allPinned.push(b);
+    });
+  });
+
+  if (allPinned.length > 0) {
+    hasPinned = true;
+    allPinned.forEach(b => {
+      const bossDiv = document.createElement("div");
+      const normalize = str => str.trim().toLowerCase().replace(/\s+/g, " ");
+      const isMain = MAIN_BOSSES.map(normalize).includes(normalize(b.boss));
+      bossDiv.className = "boss pinned-boss" + (b.done ? " done" : "") + (isMain ? " main-boss" : "");
+      bossDiv.innerHTML = `<span class="deaths">💀 ${b.deaths}</span><span class="boss-name"><span class="ticker-inner">${b.boss}</span></span>`;
+      pinnedArea.appendChild(bossDiv);
+    });
+  }
+  pinnedArea.style.display = hasPinned ? "block" : "none";
+
+  // ================================
+  // RENDER NORMAL AREAS
+  // ================================
+  content.innerHTML = "";
+
+  Object.entries(areas).forEach(([area, data]) => {
+    const visibleBosses = data.bosses.filter(bossPassesFilter);
+    if (visibleBosses.length === 0) return;
+
+    const areaDiv = document.createElement("div");
+    areaDiv.className = "area";
+
+    areaDiv.innerHTML = `
+      <div class="area-title">${data.collapsed ? "▶" : "▼"} ${area}</div>
+      <div class="area-progress">${data.done} / ${data.total}</div>
+    `;
+
+    if (!data.collapsed) {
+      visibleBosses.forEach(b => {
+        const bossDiv = document.createElement("div");
+        const isMain = MAIN_BOSSES.includes(b.boss);
+        bossDiv.className = "boss" + (b.done ? " done" : "") + (isMain ? " main-boss" : "");
+        bossDiv.innerHTML = `<span class="deaths">† ${b.deaths}</span><span class="boss-name">${b.boss}</span>`;
+        areaDiv.appendChild(bossDiv);
+      });
+    }
+    content.appendChild(areaDiv);
+  });
+}
+
+/* ================= TICKER ENGINE ================= */
+
+let tickerState = {};
+
+function runTickers() {
+  document.querySelectorAll('.pinned-boss .boss-name').forEach(containerEl => {
+    const inner = containerEl.querySelector('.ticker-inner');
+    if (!inner) return;
+
+    const key = inner.textContent.trim();
+
+    if (!tickerState[key]) {
+      tickerState[key] = { pos: 0, dir: 1, pause: 80 };
+    }
+    const s = tickerState[key];
+
+    const innerW     = inner.getBoundingClientRect().width;
+    const containerW = containerEl.getBoundingClientRect().width;
+    const maxScroll  = innerW - containerW;
+
+    if (maxScroll <= 0) {
+      inner.style.transform = "translateX(0)";
+      return;
+    }
+
+    if (s.pause > 0) { s.pause--; return; }
+
+    s.pos += s.dir * 0.5;
+
+    if (s.pos >= maxScroll) {
+      s.pos = maxScroll;
+      s.dir = -1;
+      s.pause = 80;
+    } else if (s.pos <= 0) {
+      s.pos = 0;
+      s.dir = 1;
+      s.pause = 80;
+    }
+
+    inner.style.transform = `translateX(${-s.pos}px)`;
+  });
+}
+
+setInterval(runTickers, 16);
+
+/* ================= VICTORY SYSTEM ================= */
+
+function triggerVictory(el) {
+  autoScrollPaused = true;
+  const container = document.getElementById("content");
+  container.scrollTo({ top: el.offsetTop - container.clientHeight / 2, behavior: "smooth" });
+
+  setTimeout(() => {
+    showOverlay();
+    spawnParticles();
+    el.style.transition = "all .4s ease";
+    el.style.transform = "scale(1.15)";
+    el.style.boxShadow = "0 0 25px #c9a44a";
+    setTimeout(() => {
+      el.style.transform = "scale(1)";
+      el.style.boxShadow = "none";
+      autoScrollPaused = false;
+    }, 2500);
+  }, VICTORY_DELAY);
+}
+
+function showOverlay() {
+  const overlay = document.getElementById("victoryOverlay");
+  const text    = document.getElementById("victoryText");
+  overlay.classList.add("victory-show");
+  text.classList.add("victory-text-show");
+  setTimeout(() => {
+    overlay.classList.remove("victory-show");
+    text.classList.remove("victory-text-show");
+  }, 3000);
+}
+
+function spawnParticles() {
+  const wrapper = document.querySelector(".wrapper");
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    const p = document.createElement("div");
+    p.className = "particle";
+    const angle    = Math.random() * 2 * Math.PI;
+    const distance = 120 + Math.random() * 80;
+    p.style.left = "50%";
+    p.style.top  = "50%";
+    p.style.setProperty("--x", Math.cos(angle) * distance + "px");
+    p.style.setProperty("--y", Math.sin(angle) * distance + "px");
+    wrapper.appendChild(p);
+    setTimeout(() => p.remove(), 1000);
+  }
+}
+
+loadData();
+setInterval(loadData, 1500);
+
+/* ================= SMOOTH 60FPS SCROLL WITH END PAUSES ================= */
+
+const SCROLL_SPEED   = 0.5;
+const PAUSE_DURATION = 2500;
+
+let scrollPos     = 0;
+let scrollDir     = 1;
+let isPaused      = false;
+let pauseUntil    = 0;
+let lastTimestamp = null;
+
+function smoothScroll(timestamp) {
+  requestAnimationFrame(smoothScroll);
+
+  if (autoScrollPaused || topDeathsModeActive) {
+    lastTimestamp = null;
+    return;
+  }
+
+  if (lastTimestamp === null) {
+    lastTimestamp = timestamp;
+    return;
+  }
+
+  const delta = timestamp - lastTimestamp;
+  lastTimestamp = timestamp;
+
+  if (isPaused) {
+    if (timestamp < pauseUntil) return;
+    isPaused = false;
+  }
+
+  const el = document.getElementById("content");
+  if (!el) return;
+
+  const maxScroll = el.scrollHeight - el.clientHeight;
+  if (maxScroll <= 0) return;
+
+  scrollPos += scrollDir * SCROLL_SPEED * (delta / (1000 / 60));
+
+  if (scrollPos >= maxScroll) {
+    scrollPos  = maxScroll;
+    scrollDir  = -1;
+    isPaused   = true;
+    pauseUntil = timestamp + PAUSE_DURATION;
+  }
+
+  if (scrollPos <= 0) {
+    scrollPos  = 0;
+    scrollDir  = 1;
+    isPaused   = true;
+    pauseUntil = timestamp + PAUSE_DURATION;
+  }
+
+  el.scrollTop = scrollPos;
+}
+
+requestAnimationFrame(smoothScroll);
+
+</script>
+</body>
+</html>
