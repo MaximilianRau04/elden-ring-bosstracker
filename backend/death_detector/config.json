@@ -30,6 +30,7 @@
   "healthbar_region": null,
   "active_boss_min_ratio": 0.72,
   "active_boss_confirm_frames": 2,
+  "active_boss_clear_seconds": 10.0,
   "hb_gate_text_min": 0.001,
   "hb_gate_text_max": 0.5,
 

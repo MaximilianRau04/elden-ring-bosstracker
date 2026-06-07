@@ -1343,12 +1343,17 @@ var detectorBridge = makeBridge("ws://127.0.0.1:8777", function(msg) {
   if (!msg) return;
   if (msg.type === "death") {
     registerDeath();
-  } else if (msg.type === "active_boss" && msg.boss) {
-    // boss health-bar name OCR → set the active boss automatically
-    var t = findBoss(msg.boss);
-    if (t && !(activeBoss.boss === t.boss && activeBoss.area === t.area)) {
-      setActiveBoss(t.area, t.boss);
-      showToast("🎯 Aktiver Boss: " + t.boss, 2000);
+  } else if (msg.type === "active_boss") {
+    if (msg.boss) {
+      // boss health-bar name OCR → set the active boss automatically
+      var t = findBoss(msg.boss);
+      if (t && !(activeBoss.boss === t.boss && activeBoss.area === t.area)) {
+        setActiveBoss(t.area, t.boss);
+        showToast("🎯 Aktiver Boss: " + t.boss, 2000);
+      }
+    } else if (activeBoss.boss) {
+      // health bar gone (kill or left the arena) → deaths count as field deaths
+      clearActiveBoss();
     }
   } else if (msg.type === "kill" && msg.boss) {
     // "…GEGNER GEFALLEN" banner → mark the active boss as defeated

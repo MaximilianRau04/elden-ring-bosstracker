@@ -75,6 +75,9 @@ def load_config():
         "healthbar_region": None,
         "active_boss_min_ratio": 0.72,
         "active_boss_confirm_frames": 2,
+        # Drop the active boss after this many seconds without a health-bar read,
+        # so a later field death isn't credited to the last boss.
+        "active_boss_clear_seconds": 10.0,
         "hb_gate_text_min": 0.001,
         "hb_gate_text_max": 0.5,
         "debug": False,
@@ -398,7 +401,9 @@ def detector_loop(cfg, bridge, region_override=None, variants=None):
 
     hb_enabled = bool(cfg.get("detect_active_boss")) and bool(variants)
     confirm = max(1, int(cfg.get("active_boss_confirm_frames", 2)))
+    clear_after = float(cfg.get("active_boss_clear_seconds", 10.0))
     pending_name, pending_count, current_active = None, 0, None
+    last_boss_seen_ts = 0.0  # last time the health-bar name was read
 
     with mss.mss() as sct:
         monitor = sct.monitors[cfg["monitor"]]
@@ -446,11 +451,16 @@ def detector_loop(cfg, bridge, region_override=None, variants=None):
                         if current_active:
                             print("[kill] %s (match=%.2f, '%s')"
                                   % (current_active, fratio, ftext))
-                            bridge.broadcast({"type": "kill",
-                                              "boss": current_active, "ts": now})
-                            # the boss is dead → no active boss until the next bar
+                            # the boss is dead → clear it first so the kill toast
+                            # is the one left on screen, then announce the kill.
+                            killed = current_active
                             current_active = None
                             pending_name, pending_count = None, 0
+                            bridge.last_active = None
+                            bridge.broadcast({"type": "active_boss",
+                                              "boss": None, "ts": now})
+                            bridge.broadcast({"type": "kill",
+                                              "boss": killed, "ts": now})
                         else:
                             print("[kill] banner seen but no active boss known "
                                   "(match=%.2f) — ignoring" % fratio)
@@ -466,6 +476,7 @@ def detector_loop(cfg, bridge, region_override=None, variants=None):
                     print("[debug] boss ratio=%.2f name=%r text=%r"
                           % (hb_ratio, name, hb_text))
                 if name:
+                    last_boss_seen_ts = now
                     if name == pending_name:
                         pending_count += 1
                     else:
@@ -477,8 +488,16 @@ def detector_loop(cfg, bridge, region_override=None, variants=None):
                         bridge.broadcast({"type": "active_boss", "boss": name,
                                           "ts": now})
                 else:
-                    # no bar / no match → keep the current active boss, reset pending
+                    # no bar / no match → reset pending; drop the active boss only
+                    # after a grace period so a flaky OCR frame mid-fight doesn't.
                     pending_name, pending_count = None, 0
+                    if current_active and (now - last_boss_seen_ts) >= clear_after:
+                        print("[boss] active boss cleared (no health bar for %.0fs)"
+                              % clear_after)
+                        current_active = None
+                        bridge.last_active = None
+                        bridge.broadcast({"type": "active_boss", "boss": None,
+                                          "ts": now})
 
             sleep = interval - (time.time() - t0)
             if sleep > 0:
