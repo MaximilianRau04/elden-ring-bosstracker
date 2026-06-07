@@ -18,6 +18,14 @@
   "gate_dark_ratio": 0.5,
   "gate_red_ratio": 0.0015,
 
+  "detect_kills": true,
+  "felled_phrases": ["GROSSER GEGNER GEFALLEN", "GEGNER GEFALLEN"],
+  "felled_key_token": "GEFALLEN",
+  "felled_match_min_ratio": 0.8,
+  "kill_cooldown_seconds": 8.0,
+  "felled_gate_dark_ratio": 0.30,
+  "felled_gate_gold_ratio": 0.0008,
+
   "detect_active_boss": true,
   "healthbar_region": null,
   "active_boss_min_ratio": 0.72,

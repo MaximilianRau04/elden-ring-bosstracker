@@ -41,7 +41,8 @@ except ImportError as e:
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(HERE, "config.json")
-BOSSES_JS = os.path.normpath(os.path.join(HERE, "..", "..", "frontend", "data", "bosses.js"))
+BOSSES_JS = os.path.normpath(
+    os.path.join(HERE, "..", "..", "frontend", "data", "bosses.js"))
 
 
 # ─── Config ──────────────────────────────────────────────────────────────────
@@ -60,6 +61,15 @@ def load_config():
         "tesseract_cmd": None,
         "gate_dark_ratio": 0.5,
         "gate_red_ratio": 0.0015,
+        # Boss-kill detection (reads the golden "…GEGNER GEFALLEN" banner and
+        # attributes the kill to the currently active boss).
+        "detect_kills": True,
+        "felled_phrases": ["GROSSER GEGNER GEFALLEN", "GEGNER GEFALLEN"],
+        "felled_key_token": "GEFALLEN",
+        "felled_match_min_ratio": 0.8,
+        "kill_cooldown_seconds": 8.0,
+        "felled_gate_dark_ratio": 0.30,
+        "felled_gate_gold_ratio": 0.0008,
         # Active-boss detection (reads the boss name above its health bar).
         "detect_active_boss": True,
         "healthbar_region": None,
@@ -125,6 +135,15 @@ def redness(img_bgr):
     return red
 
 
+def goldness(img_bgr):
+    """Per-pixel 'how golden is this' map. Golden text is high red AND green
+    with low blue, so min(r, g) - b lights it up while staying dark on the
+    dull background and on the dark-red death text."""
+    b, g, r = cv2.split(img_bgr.astype("int16"))
+    gold = np.clip(np.minimum(r, g) - b, 0, 255).astype("uint8")
+    return gold
+
+
 def looks_like_death(img_bgr, cfg):
     """Cheap pre-gate so we only run OCR when a death screen is plausible.
 
@@ -135,21 +154,32 @@ def looks_like_death(img_bgr, cfg):
     return dark_ratio >= cfg["gate_dark_ratio"] and red_ratio >= cfg["gate_red_ratio"]
 
 
+def looks_like_felled(img_bgr, cfg):
+    """Cheap pre-gate for the boss-kill banner: the screen darkens (vignette)
+    and shows bright golden text."""
+    gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+    dark_ratio = float((gray < 90).mean())
+    gold_ratio = float((goldness(img_bgr) > 60).mean())
+    return (dark_ratio >= cfg["felled_gate_dark_ratio"]
+            and gold_ratio >= cfg["felled_gate_gold_ratio"])
+
+
 def clean_text(t):
     return re.sub(r"[^A-ZÄÖÜ ]", "", t.upper()).strip()
 
 
-def phrase_score(text, cfg):
+def phrase_score(text, phrases, key_token):
+    """Fuzzy 0..1 score of `text` against a set of phrases + a key token."""
     c = clean_text(text)
     if not c:
         return 0.0, c
     best = 0.0
-    for p in cfg["phrases"]:
+    for p in phrases:
         pu = clean_text(p)
         if pu and pu in c:
             return 1.0, c
         best = max(best, difflib.SequenceMatcher(None, pu, c).ratio())
-    key = clean_text(cfg["key_token"])
+    key = clean_text(key_token)
     if key:
         if key in c:
             return 1.0, c
@@ -158,12 +188,15 @@ def phrase_score(text, cfg):
     return best, c
 
 
-def ocr_variants(img_bgr):
-    """Yield a couple of preprocessed binary images good for OCR."""
-    red = redness(img_bgr)
-    red = cv2.normalize(red, None, 0, 255, cv2.NORM_MINMAX)
+def ocr_variants(img_bgr, channel="red"):
+    """Yield a couple of preprocessed binary images good for OCR.
+
+    `channel` picks the colour emphasis: 'red' for the dark-red death text,
+    'gold' for the golden boss-kill banner."""
+    emph = goldness(img_bgr) if channel == "gold" else redness(img_bgr)
+    emph = cv2.normalize(emph, None, 0, 255, cv2.NORM_MINMAX)
     gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
-    for src in (red, gray):
+    for src in (emph, gray):
         big = cv2.resize(src, None, fx=2.0, fy=2.0, interpolation=cv2.INTER_CUBIC)
         _, th = cv2.threshold(big, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         # Text can come out as white-on-black or black-on-white; OCR wants
@@ -178,14 +211,31 @@ def detect_death(img_bgr, cfg):
         return False, 0.0, ""
     lang = cfg["ocr_lang"]
     best_ratio, best_text = 0.0, ""
-    for variant in ocr_variants(img_bgr):
+    for variant in ocr_variants(img_bgr, channel="red"):
         txt = pytesseract.image_to_string(variant, lang=lang, config="--psm 7")
-        ratio, cleaned = phrase_score(txt, cfg)
+        ratio, cleaned = phrase_score(txt, cfg["phrases"], cfg["key_token"])
         if ratio > best_ratio:
             best_ratio, best_text = ratio, cleaned
         if best_ratio >= 1.0:
             break
     return best_ratio >= cfg["match_min_ratio"], best_ratio, best_text
+
+
+def detect_felled(img_bgr, cfg):
+    """Return (is_felled, best_ratio, best_text) for the boss-kill banner."""
+    if not looks_like_felled(img_bgr, cfg):
+        return False, 0.0, ""
+    lang = cfg["ocr_lang"]
+    best_ratio, best_text = 0.0, ""
+    for variant in ocr_variants(img_bgr, channel="gold"):
+        txt = pytesseract.image_to_string(variant, lang=lang, config="--psm 7")
+        ratio, cleaned = phrase_score(txt, cfg["felled_phrases"],
+                                      cfg["felled_key_token"])
+        if ratio > best_ratio:
+            best_ratio, best_text = ratio, cleaned
+        if best_ratio >= 1.0:
+            break
+    return best_ratio >= cfg["felled_match_min_ratio"], best_ratio, best_text
 
 
 # ─── Active boss (boss health-bar name) ────────────────────────────────────────
@@ -341,6 +391,11 @@ def detector_loop(cfg, bridge, region_override=None, variants=None):
     last_death_ts = 0.0
     banner_visible = False  # edge-trigger: count only on the rising edge
 
+    kills_enabled = bool(cfg.get("detect_kills"))
+    kill_cooldown = cfg["kill_cooldown_seconds"]
+    last_kill_ts = 0.0
+    felled_visible = False
+
     hb_enabled = bool(cfg.get("detect_active_boss")) and bool(variants)
     confirm = max(1, int(cfg.get("active_boss_confirm_frames", 2)))
     pending_name, pending_count, current_active = None, 0, None
@@ -351,6 +406,8 @@ def detector_loop(cfg, bridge, region_override=None, variants=None):
         hb_region = cfg.get("healthbar_region") or auto_region_healthbar(monitor)
         print("[capture] death region: %s" % region)
         print("[detector] watching for 'DU BIST GESTORBEN' … (Ctrl+C to stop)")
+        if kills_enabled:
+            print("[detector] boss-kill detection on (watches '…GEGNER GEFALLEN')")
         if hb_enabled:
             print("[capture] boss-name region: %s" % hb_region)
             print("[detector] active-boss detection on (%d bosses known)"
@@ -375,6 +432,31 @@ def detector_loop(cfg, bridge, region_override=None, variants=None):
                 banner_visible = True
             else:
                 banner_visible = False
+
+            # ── boss kill: the golden "…GEGNER GEFALLEN" banner ──
+            # The banner doesn't name the boss, so we credit the boss whose
+            # health bar we last saw (current_active).
+            if kills_enabled:
+                is_felled, fratio, ftext = detect_felled(frame, cfg)
+                if cfg.get("debug") and fratio > 0.4:
+                    print("[debug] felled ratio=%.2f text=%r" % (fratio, ftext))
+                if is_felled:
+                    if not felled_visible and (now - last_kill_ts) >= kill_cooldown:
+                        last_kill_ts = now
+                        if current_active:
+                            print("[kill] %s (match=%.2f, '%s')"
+                                  % (current_active, fratio, ftext))
+                            bridge.broadcast({"type": "kill",
+                                              "boss": current_active, "ts": now})
+                            # the boss is dead → no active boss until the next bar
+                            current_active = None
+                            pending_name, pending_count = None, 0
+                        else:
+                            print("[kill] banner seen but no active boss known "
+                                  "(match=%.2f) — ignoring" % fratio)
+                    felled_visible = True
+                else:
+                    felled_visible = False
 
             # ── active boss: read the name above the health bar ──
             if hb_enabled:
@@ -431,6 +513,14 @@ def run_test(cfg, region_override=None):
     print("pre-gate hit : %s" % gate)
     print("death match  : %.2f  text=%r" % (ratio, text))
     print("=> DEATH" if is_death else "=> no death")
+
+    if cfg.get("detect_kills"):
+        fgate = looks_like_felled(frame, cfg)
+        is_felled, fratio, ftext = detect_felled(frame, cfg)
+        print("\nkill banner shares the death region.")
+        print("felled gate  : %s" % fgate)
+        print("felled match : %.2f  text=%r" % (fratio, ftext))
+        print("=> KILL" if is_felled else "=> no kill")
 
     print("\nboss region  : %s" % hb_region)
     if cfg.get("detect_active_boss"):
