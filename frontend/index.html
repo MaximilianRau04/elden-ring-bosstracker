@@ -7,7 +7,7 @@
 <title>Elden Ring - Boss Tracker</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="style.css">
-<!-- Everything is served locally – no external requests. -->
+<!-- Everything is served locally - no external requests. -->
 <script src="assets/chart.umd.min.js"></script>
 </head>
 <body>
@@ -87,23 +87,23 @@
     <div class="stat-chip deaths-chip" id="stat-deaths">
       <span class="icon">💀</span>
       <span>Tode:</span>
-      <span class="value" id="val-deaths">–</span>
+      <span class="value" id="val-deaths">-</span>
     </div>
     <div class="stat-chip stat-chip-clickable" id="stat-bosses" onclick="openBossLevelPanel()" data-tip="Besiegte Bosse nach Level sortiert anzeigen" data-tip-always="1">
       <span class="icon">🏆</span>
       <span>Bosse:</span>
-      <span class="value" id="val-bosses">–</span>
+      <span class="value" id="val-bosses">-</span>
       <span class="stat-chip-arrow">▾</span>
     </div>
     <div class="stat-chip" id="stat-percent">
       <span class="icon">📜</span>
       <span>Abschluss:</span>
-      <span class="value" id="val-percent">–</span>
+      <span class="value" id="val-percent">-</span>
     </div>
     <div class="stat-chip avg-chip" id="stat-avg">
       <span class="icon">⚖️</span>
       <span>Ø Tode/Boss:</span>
-      <span class="value" id="val-avg">–</span>
+      <span class="value" id="val-avg">-</span>
     </div>
     <div class="stat-chip" id="timer-chip">
       <span class="icon">⏳</span>
@@ -119,7 +119,7 @@
       <span class="field-deaths-label">⚔ Base Game</span>
       <div class="field-deaths-controls">
         <button class="fdeath-btn fdeath-minus" onclick="adjustFieldDeaths('base',-1)">−</button>
-        <span class="fdeath-val" id="fdeath-val-base">–</span>
+        <span class="fdeath-val" id="fdeath-val-base">-</span>
         <button class="fdeath-btn fdeath-plus" onclick="adjustFieldDeaths('base',+1)">+</button>
       </div>
     </div>
@@ -128,7 +128,7 @@
       <span class="field-deaths-label">🌑 DLC</span>
       <div class="field-deaths-controls">
         <button class="fdeath-btn fdeath-minus" onclick="adjustFieldDeaths('dlc',-1)">−</button>
-        <span class="fdeath-val" id="fdeath-val-dlc">–</span>
+        <span class="fdeath-val" id="fdeath-val-dlc">-</span>
         <button class="fdeath-btn fdeath-plus" onclick="adjustFieldDeaths('dlc',+1)">+</button>
       </div>
     </div>
@@ -137,7 +137,7 @@
   <!-- ── ACTIVE BOSS (deaths get attributed here) ── -->
   <div class="active-boss-bar" id="active-boss-bar" style="display:none;">
     <span class="active-boss-label">🎯 Aktiver Boss:</span>
-    <span class="active-boss-name" id="active-boss-name">–</span>
+    <span class="active-boss-name" id="active-boss-name">-</span>
     <span class="active-boss-hint">erkannte Tode werden hier gezählt</span>
     <button class="active-boss-clear" id="active-boss-clear" onclick="clearActiveBoss()" data-tip="Aktiven Boss aufheben (Tode zählen dann als Feldtod)" data-tip-always="1">✕</button>
   </div>
@@ -237,14 +237,14 @@
 <div class="toast" id="toast"></div>
 
 <footer class="site-footer">
-  &copy; ynnk99 &bull; Elden Ring Boss Tracker &bull; lokal &amp; offline – Fortschritt im Browser gespeichert
+  Elden Ring Boss Tracker &bull; lokal &amp; offline - Fortschritt im Browser gespeichert
 </footer>
 
 <!-- ── BOSS CONTEXT MENU ── -->
 <div class="boss-menu" id="boss-menu" role="menu">
   <div class="boss-menu-header">
-    <div class="boss-menu-bossname" id="menu-boss-name">–</div>
-    <div class="boss-menu-areaname" id="menu-area-name">–</div>
+    <div class="boss-menu-bossname" id="menu-boss-name">-</div>
+    <div class="boss-menu-areaname" id="menu-area-name">-</div>
   </div>
   <div class="boss-menu-body">
     <span class="boss-menu-section-label">Tode</span>

@@ -249,7 +249,7 @@ function renderBossLevelPanel() {
       + '<span class="boss-level-area">' + escHtml(b.area) + '</span>'
       + '</div>'
       + '<span class="boss-level-deaths' + (b.deaths === 0 ? " nodeath" : "") + '">'
-      + (b.deaths > 0 ? '†' + b.deaths : '†–')
+      + (b.deaths > 0 ? '†' + b.deaths : '†-')
       + '</span>'
       + '</div>';
   }).join("");
@@ -628,7 +628,7 @@ function updateBossRow(areaName, bossName, bossData) {
   row.className = "boss-row" + (isDone ? " done" : "") + " editable";
   var deathsEl = row.querySelector(".boss-deaths");
   var nameEl   = row.querySelector(".boss-name");
-  if (deathsEl) deathsEl.textContent = bossData.deaths > 0 ? "†" + bossData.deaths : "†–";
+  if (deathsEl) deathsEl.textContent = bossData.deaths > 0 ? "†" + bossData.deaths : "†-";
   if (nameEl)   nameEl.className     = "boss-name" + (isMain ? " main" : "");
 }
 
@@ -639,7 +639,7 @@ function updatePinnedCard(areaName, bossName, bossData) {
   if (!card) return;
   card.classList.toggle("done", bossData.done);
   var deathsEl = card.querySelector(".pinned-deaths");
-  if (deathsEl) deathsEl.textContent = "📌 " + (bossData.deaths > 0 ? bossData.deaths : "–");
+  if (deathsEl) deathsEl.textContent = "📌 " + (bossData.deaths > 0 ? bossData.deaths : "-");
 }
 
 function updateAreaHeader(areaName) {
@@ -828,9 +828,9 @@ function renderRanking(allBosses) {
   var maxDeaths       = top.length > 0 ? top[0].deaths : 1;
   var totalDeaths     = allBosses.reduce(function(s, b) { return s + b.deaths; }, 0);
   var bossesAttempted = allBosses.filter(function(b) { return b.done; }).length;
-  var avgDeaths       = bossesAttempted > 0 ? (totalDeaths / bossesAttempted).toFixed(1) : "–";
+  var avgDeaths       = bossesAttempted > 0 ? (totalDeaths / bossesAttempted).toFixed(1) : "-";
 
-  document.getElementById("val-avg").textContent = avgDeaths === "–" ? "–" : avgDeaths + " †";
+  document.getElementById("val-avg").textContent = avgDeaths === "-" ? "-" : avgDeaths + " †";
 
   var subtitle = document.getElementById("ranking-subtitle");
   if (subtitle) {
@@ -1012,7 +1012,7 @@ function processData() {
   }
 }
 
-// Recompute the stats bar. allBosses optional – otherwise derived from PROGRESS.
+// Recompute the stats bar. allBosses optional - otherwise derived from PROGRESS.
 function recomputeStats(allBosses) {
   if (!allBosses) {
     allBosses = [];
@@ -1069,8 +1069,8 @@ function recomputeStats(allBosses) {
 
   // avg deaths/boss
   var bossesAttempted = doneBosses;
-  var avg = bossesAttempted > 0 ? (bossDeaths / bossesAttempted).toFixed(1) : "–";
-  document.getElementById("val-avg").textContent = avg === "–" ? "–" : avg + " †";
+  var avg = bossesAttempted > 0 ? (bossDeaths / bossesAttempted).toFixed(1) : "-";
+  document.getElementById("val-avg").textContent = avg === "-" ? "-" : avg + " †";
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1100,7 +1100,7 @@ function renderAreas(areas) {
       card.dataset.area = b.area;
       card.addEventListener("click", function(e) { openBossMenu(e, b.area, b.boss); });
       card.addEventListener("touchend", function(e) { e.preventDefault(); openBossMenu(e, b.area, b.boss); });
-      card.innerHTML = '<span class="pinned-deaths">📌 ' + (b.deaths > 0 ? b.deaths : "–") + '</span>'
+      card.innerHTML = '<span class="pinned-deaths">📌 ' + (b.deaths > 0 ? b.deaths : "-") + '</span>'
         + '<span class="pinned-name' + (isMain ? " main-boss" : "") + '">' + escHtml(b.boss) + '</span>'
         + '<span class="boss-edit-hint" data-tip="Bearbeiten" data-tip-always="1">✏</span>';
       pinnedList.appendChild(card);
@@ -1172,7 +1172,7 @@ function renderBossRow(b, areaName) {
     + ' data-boss="' + escAttr(b.boss) + '"'
     + ' data-area="' + escAttr(areaName) + '"'
     + ' onclick="openBossMenu(event,\'' + escAttr(areaName) + '\',\'' + escAttr(b.boss) + '\')">'
-    + '<span class="boss-deaths' + deathClass + '">' + (b.deaths > 0 ? "†" + b.deaths : "†–") + '</span>'
+    + '<span class="boss-deaths' + deathClass + '">' + (b.deaths > 0 ? "†" + b.deaths : "†-") + '</span>'
     + '<span class="boss-name' + (isMain ? " main" : "") + '" data-tip="' + escAttr(b.boss) + '">' + escHtml(b.boss) + '</span>'
     + '<span class="boss-check">✓</span>'
     + '<span class="boss-edit-hint" data-tip="Bearbeiten" data-tip-always="1">✏</span>'
@@ -1267,7 +1267,7 @@ function registerDeath() {
 function registerBossKill(bossName) {
   var target = bossName ? findBoss(bossName) : (activeBoss.boss ? { area: activeBoss.area, boss: activeBoss.boss } : null);
   if (!target) { console.warn("[Automation] Boss nicht gefunden:", bossName); return false; }
-  // Already defeated → no-op (keeps the save-watcher sync from re-rendering everything).
+  // Already defeated → no-op (avoids re-rendering everything on a repeat detection).
   if (getBossProgress(target.area, target.boss).done) return true;
   applyBossChange(target.area, target.boss, "done", true);
   return true;
@@ -1305,10 +1305,11 @@ window.ERTracker = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// AUTOMATION BRIDGES (local helper tools → ERTracker)
-//   - death-detector (backend/death_detector, port 8777): screen OCR → deaths
-//   - save-watcher   (backend/save_watcher,   port 8778): save file → boss kills
-//   Both are optional. When a tool isn't running the bridge just keeps retrying
+// AUTOMATION BRIDGE (local helper tool → ERTracker)
+//   - death-detector (backend/death_detector, port 8777): screen OCR →
+//       deaths, the active boss (health-bar name) and boss kills (the golden
+//       "…GEGNER GEFALLEN" banner, credited to the active boss).
+//   Optional. When the tool isn't running the bridge just keeps retrying
 //   quietly every few seconds - no errors, nothing happens.
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -1338,7 +1339,7 @@ function makeBridge(url, onMessage) {
   return { connect: connect };
 }
 
-var deathBridge = makeBridge("ws://127.0.0.1:8777", function(msg) {
+var detectorBridge = makeBridge("ws://127.0.0.1:8777", function(msg) {
   if (!msg) return;
   if (msg.type === "death") {
     registerDeath();
@@ -1349,16 +1350,13 @@ var deathBridge = makeBridge("ws://127.0.0.1:8777", function(msg) {
       setActiveBoss(t.area, t.boss);
       showToast("🎯 Aktiver Boss: " + t.boss, 2000);
     }
-  }
-});
-
-var killBridge = makeBridge("ws://127.0.0.1:8778", function(msg) {
-  if (!msg) return;
-  if (msg.type === "kill" && msg.boss) {
-    registerBossKill(msg.boss);
-  } else if (msg.type === "sync" && Array.isArray(msg.bosses)) {
-    // freshly loaded page catching up on already-defeated bosses
-    msg.bosses.forEach(function(name) { registerBossKill(name); });
+  } else if (msg.type === "kill" && msg.boss) {
+    // "…GEGNER GEFALLEN" banner → mark the active boss as defeated
+    var p = findBoss(msg.boss);
+    var fresh = p && !getBossProgress(p.area, p.boss).done;
+    if (registerBossKill(msg.boss) && fresh) {
+      showToast("⚔️ Boss besiegt: " + (p ? p.boss : msg.boss), 2500);
+    }
   }
 });
 
@@ -1386,8 +1384,7 @@ function init() {
 
   updateActiveBossDisplay();
 
-  deathBridge.connect();
-  killBridge.connect();
+  detectorBridge.connect();
 
   processData();
 

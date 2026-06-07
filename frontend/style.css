@@ -899,7 +899,7 @@ body.filter-open #chart-section {
 .fdeath-btn.fdeath-minus:hover { background: rgba(196,74,58,0.15); }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   ACTIVE BOSS BAR – shows which boss detected deaths get attributed to
+   ACTIVE BOSS BAR - shows which boss detected deaths get attributed to
 ═══════════════════════════════════════════════════════════════════════ */
 
 .active-boss-bar {
@@ -959,7 +959,7 @@ body.filter-open #chart-section {
 .active-boss-clear:active { transform: scale(0.9); }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   EDITOR TOOLBOX – Icon strip + flyout panels
+   EDITOR TOOLBOX - Icon strip + flyout panels
 ═══════════════════════════════════════════════════════════════════════ */
 
 body.editor-mode { padding-left: 0; }
