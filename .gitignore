@@ -36,3 +36,6 @@ logs/
 # Misc
 .cache/
 coverage.xml
+
+# Local progress store (user data written by backend/server.py)
+backend/data/

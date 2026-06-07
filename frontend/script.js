@@ -130,6 +130,55 @@ function saveProgress() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(PROGRESS));
   } catch (e) { console.error("[Progress] Speichern fehlgeschlagen:", e); }
+  syncToServer(); // mirror to the on-disk store when the local server is running
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SERVER STORAGE (optional backend/server.py → progress.json on disk)
+//   localStorage stays the offline cache; when the local server is reachable
+//   it is the source of truth and every save is mirrored to disk.
+// ═══════════════════════════════════════════════════════════════════════════
+
+var serverAvailable = false;
+var serverPushTimer = null;
+
+// Debounced POST of the whole PROGRESS object to the disk store.
+function syncToServer() {
+  if (!serverAvailable) return;
+  if (serverPushTimer) clearTimeout(serverPushTimer);
+  serverPushTimer = setTimeout(function() {
+    serverPushTimer = null;
+    fetch("/api/progress", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(PROGRESS)
+    }).catch(function() { /* offline → localStorage keeps the data */ });
+  }, 400);
+}
+
+// On startup: prefer the disk store when the server is up; otherwise fall back
+// to localStorage. Seeds the disk store from localStorage on first run.
+function bootstrapStorage() {
+  return fetch("/api/progress", { cache: "no-store" })
+    .then(function(r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    .then(function(remote) {
+      serverAvailable = true;
+      if (remote && remote.bosses && typeof remote.bosses === "object") {
+        // disk store wins → refresh the local cache from it before loading
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(remote)); } catch (e) {}
+      } else {
+        // empty disk store → seed it from whatever is in localStorage
+        var local = localStorage.getItem(STORAGE_KEY);
+        if (local) {
+          fetch("/api/progress", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: local
+          }).catch(function() {});
+        }
+      }
+    })
+    .catch(function() { serverAvailable = false; }); // static hosting / offline
 }
 
 function getBossProgress(area, boss) {
@@ -1397,4 +1446,5 @@ function init() {
   document.getElementById("areas-grid").style.display      = "grid";
 }
 
-init();
+// Load the disk store (if the local server is running) before rendering, then init.
+bootstrapStorage().then(init);

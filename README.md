@@ -19,16 +19,29 @@ Event types (all on `ws://127.0.0.1:8777`)
 - `{type: "active_boss", boss: "Name"}` - active boss detected from the healthbar OCR; used to attribute subsequent deaths/kills automatically.
 - `{type: "kill", boss: "Name"}` - the kill banner was detected; the web UI calls `registerBossKill()` for the active boss.
 
-Quickstart - Web UI (static)
+Quickstart - Web UI
 
-1. From the repository root run a simple HTTP server:
+Run the bundled server (standard library only, no extra deps). It serves the
+web app and persists progress to a JSON file on disk:
 
 ```bash
-python3 -m http.server 8000
-# open http://localhost:8000 in your browser
+python3 backend/server.py
+# open http://127.0.0.1:8000 in your browser
 ```
 
-If you move frontend files to `ui/` run the server from that folder instead.
+Options: `--port 9000`, `--data /path/to/progress.json` (default
+`backend/data/progress.json`). Ctrl+C to stop.
+
+Persistence
+
+- Progress is stored on disk by the server (`backend/data/progress.json`) and
+  survives clearing the browser cache; it is shared across browsers on the same
+  machine. The file is git-ignored.
+- The web app also keeps a `localStorage` copy as an offline cache. When the
+  server is reachable the disk store is the source of truth and every change is
+  mirrored to it; on first run an existing localStorage copy seeds the file.
+- You can still open the static files without the server (e.g.
+  `python3 -m http.server`), in which case progress lives only in localStorage.
 
 Death Detector (backend/death_detector)
 
