@@ -388,3 +388,33 @@ window.BOSS_DATA = [
     ]
   }
 ];
+
+// Story / demigod "main" bosses (highlighted in the tracker and overlay).
+// Kept here so the tracker and the overlay share one list.
+window.MAIN_BOSSES = [
+  "Margit, das Grausame Mal",
+  "Godrick der Verpflanzte",
+  "Rennala, Königin des Vollmonds",
+  "Roter Wolf von Radagon",
+  "Sternengeißel Radahn",
+  "Götterverschlingende Schlange / Rykard, Fürst der Blasphemie",
+  "Drachenbaumwächter",
+  "Godfrey, Erster Eldenfürst",
+  "Morgott, König des Mals",
+  "Mohg, Fürst des Blutes",
+  "Feuerriese",
+  "Bestienkleriker / Maliketh, die Schwarze Klinge",
+  "Duo der Götterskalpe",
+  "Malenia, Klinge von Miquella",
+  "Godfrey, Erster Eldenfürst (Hoarah Loux)",
+  "Sir Gideon Ofnir, der Allwissende",
+  "Radagon von der Goldenen Ordnung / Eldenbestie",
+  "Rellana, Zwillings-Mondritterin",
+  "Göttliche Bestie - Tanzender Löwe",
+  "Messmer der Pfähler + Böse Schlange Messmer",
+  "Bayle der Schreckliche",
+  "Midra, Herr der Rasenden Flamme",
+  "Kommandant Gaius",
+  "Romina, Heilige der Knospe",
+  "Radahn, versprochener Gemahl + Radahn, Miquellas Gemahl",
+];

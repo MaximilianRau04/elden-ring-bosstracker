@@ -56,9 +56,22 @@ OBS setup
   - `…/overlay/` — normal scrolling boss list.
   - `…/overlay/?view=simple` — compact view (header + pinned bosses only).
   - `…/overlay/?mode=top` — Top 10 most-died bosses.
+- Individual widgets can be toggled from the tracker's editor toolbox (the
+  "Overlay" panel: deaths, progress, pinned, boss list, victory animation).
+  These settings are saved with the progress and the overlay follows live.
+- The same widgets can also be overridden per OBS source via URL params
+  (a URL param wins over the toolbox setting), default all on,
+  e.g. `…/overlay/?timer=0&pinned=0`:
+  - `deaths=0` hide the total-deaths counter
+  - `progress=0` hide the boss-progress counter
+  - `timer=0` hide the timer
+  - `pinned=0` hide the pinned-bosses section
+  - `list=0` hide the scrolling boss list
+  - `victory=0` disable the boss-kill victory animation
 - Content and filters always mirror the tracker UI live: toggle Base/DLC, the
   open/done filters, pin a boss, or start the timer in the tracker and the
   overlay follows within ~1.5s.
+- Files: `frontend/overlay/index.html` (markup) + `overlay.css` + `overlay.js`.
 
 Data flow (important)
 

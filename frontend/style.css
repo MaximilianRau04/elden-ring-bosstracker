@@ -684,6 +684,15 @@ body.searching .area-card .area-toggle-icon { opacity: 0.3; pointer-events: none
   letter-spacing: 0.04em;
 }
 
+/* editable death counts: look like plain text, subtle underline on focus */
+.boss-menu-deaths-val[contenteditable],
+.fdeath-val[contenteditable] { cursor: text; }
+.boss-menu-deaths-val[contenteditable]:focus,
+.fdeath-val[contenteditable]:focus {
+  outline: none;
+  border-bottom: 1px solid var(--gold);
+}
+
 .boss-menu-deaths-label {
   font-family: 'Crimson Pro', serif;
   font-size: 11px;
@@ -968,7 +977,6 @@ body.editor-mode { padding-left: 0; }
   position: fixed;
   left: 0;
   top: 50%;
-  transform: translateY(-50%);
   width: 52px;
   display: flex;
   flex-direction: column;
@@ -1004,10 +1012,11 @@ body.editor-mode { padding-left: 0; }
 }
 
 .etb-panel {
-  position: absolute;
-  left: 50px;
-  top: 0;
+  position: fixed;
+  left: 56px;
+  top: 50%;
   width: 200px;
+  max-height: calc(100vh - 20px);
   background: rgba(8, 7, 4, 0.98);
   border: 1px solid rgba(201,164,74,0.28);
   border-radius: 8px;
@@ -1017,6 +1026,8 @@ body.editor-mode { padding-left: 0; }
   gap: 6px;
   z-index: 901;
   box-shadow: 4px 4px 30px rgba(0,0,0,0.6);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .etb-item.open .etb-panel { display: flex; }
 
@@ -1151,6 +1162,41 @@ body.editor-mode { padding-left: 0; }
 .etb-time-set-btn:hover {
   background: rgba(201,164,74,0.26);
   border-color: var(--gold);
+}
+
+/* Timer panel: section label + divider + label input */
+.etb-timer-section-label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold-dim, #7d6a3d);
+  margin: 6px 0 4px;
+}
+
+.etb-timer-divider {
+  height: 1px;
+  background: rgba(201,164,74,0.18);
+  margin: 10px 0 8px;
+}
+
+.etb-timer-label-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(201,164,74,0.2);
+  border-radius: 5px;
+  color: var(--parchment-dim);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 5px 8px;
+  margin-bottom: 4px;
+  outline: none;
+}
+.etb-timer-label-input:focus {
+  border-color: rgba(201,164,74,0.6);
+}
+.etb-timer-label-input::placeholder {
+  color: rgba(230,220,200,0.25);
 }
 
 /* ══════════════════════════════════════════════════════════════

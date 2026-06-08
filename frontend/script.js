@@ -14,33 +14,9 @@
 const RANKING_TOP_N = 10;
 const STORAGE_KEY = "er_bosstracker_v1";
 
-const MAIN_BOSSES = new Set([
-  "Margit, das Grausame Mal",
-  "Godrick der Verpflanzte",
-  "Rennala, Königin des Vollmonds",
-  "Roter Wolf von Radagon",
-  "Sternengeißel Radahn",
-  "Götterverschlingende Schlange / Rykard, Fürst der Blasphemie",
-  "Drachenbaumwächter",
-  "Godfrey, Erster Eldenfürst",
-  "Morgott, König des Mals",
-  "Mohg, Fürst des Blutes",
-  "Feuerriese",
-  "Bestienkleriker / Maliketh, die Schwarze Klinge",
-  "Duo der Götterskalpe",
-  "Malenia, Klinge von Miquella",
-  "Godfrey, Erster Eldenfürst (Hoarah Loux)",
-  "Sir Gideon Ofnir, der Allwissende",
-  "Radagon von der Goldenen Ordnung / Eldenbestie",
-  "Rellana, Zwillings-Mondritterin",
-  "Göttliche Bestie - Tanzender Löwe",
-  "Messmer der Pfähler + Böse Schlange Messmer",
-  "Bayle der Schreckliche",
-  "Midra, Herr der Rasenden Flamme",
-  "Kommandant Gaius",
-  "Romina, Heilige der Knospe",
-  "Radahn, versprochener Gemahl + Radahn, Miquellas Gemahl",
-]);
+// Story / demigod "main" bosses - list lives in data/bosses.js (shared with the
+// overlay), loaded before this file. Kept as a Set for fast .has() lookups.
+const MAIN_BOSSES = new Set(window.MAIN_BOSSES || []);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // STATE
@@ -63,15 +39,26 @@ var prevChartSnapshot = "";
 var fieldDeaths = { base: 0, dlc: 0 };
 var bossLevelData = []; // { boss, level, area, deaths, done, isMain, isDLC }
 
-// Timer
+// Timer (allgemein)
 var timerStartTs  = 0;
 var timerElapsed  = 0;
 var timerVisible  = false;
 var timerInterval = null;
 var timerLabel    = "";
 
+// Boss-Timer
+var bossTimerStartTs  = 0;
+var bossTimerElapsed  = 0;
+var bossTimerVisible  = false;
+var bossTimerInterval = null;
+var bossTimerLabel    = "";
+var bossToolboxTick   = null;
+
 // Active boss (for automation: deaths/kills get assigned to it)
 var activeBoss = { area: null, boss: null };
+
+// Overlay widget visibility (configured in the toolbox, read by the overlay)
+var overlayCfg = { deaths: true, progress: true, pinned: true, list: true, victory: true };
 
 // Boss menu state
 var menuState = { area: null, boss: null, deaths: 0, done: false, pinned: false };
@@ -88,7 +75,9 @@ var PROGRESS = {
   ui: { showBase: true, showDLC: true, showOnlyMain: false, showOnlyDone: false, showOnlyOpen: false },
   collapsed: {},
   timer: { startTs: 0, elapsed: 0, visible: false, label: "" },
-  activeBoss: { area: null, boss: null }
+  bossTimer: { startTs: 0, elapsed: 0, visible: false, label: "" },
+  activeBoss: { area: null, boss: null },
+  overlay: { deaths: true, progress: true, pinned: true, list: true, victory: true }
 };
 
 function loadProgress() {
@@ -102,7 +91,9 @@ function loadProgress() {
       PROGRESS.ui          = parsed.ui          || PROGRESS.ui;
       PROGRESS.collapsed   = parsed.collapsed   || {};
       PROGRESS.timer       = parsed.timer       || PROGRESS.timer;
+      PROGRESS.bossTimer   = parsed.bossTimer   || PROGRESS.bossTimer;
       PROGRESS.activeBoss  = parsed.activeBoss  || { area: null, boss: null };
+      PROGRESS.overlay     = Object.assign({ deaths: true, progress: true, pinned: true, list: true, victory: true }, parsed.overlay || {});
     }
   } catch (e) { console.error("[Progress] Laden fehlgeschlagen:", e); }
 
@@ -118,15 +109,22 @@ function loadProgress() {
   timerElapsed   = PROGRESS.timer.elapsed || 0;
   timerVisible   = !!PROGRESS.timer.visible;
   timerLabel     = PROGRESS.timer.label || "";
+  bossTimerStartTs  = PROGRESS.bossTimer.startTs || 0;
+  bossTimerElapsed  = PROGRESS.bossTimer.elapsed || 0;
+  bossTimerVisible  = !!PROGRESS.bossTimer.visible;
+  bossTimerLabel    = PROGRESS.bossTimer.label || "";
   activeBoss     = PROGRESS.activeBoss || { area: null, boss: null };
+  overlayCfg     = Object.assign({ deaths: true, progress: true, pinned: true, list: true, victory: true }, PROGRESS.overlay || {});
 }
 
 function saveProgress() {
   PROGRESS.fieldDeaths = fieldDeaths;
   PROGRESS.ui = { showBase: showBase, showDLC: showDLC, showOnlyMain: showOnlyMain, showOnlyDone: showOnlyDone, showOnlyOpen: showOnlyOpen };
   PROGRESS.collapsed = localCollapsed;
-  PROGRESS.timer = { startTs: timerStartTs, elapsed: timerElapsed, visible: timerVisible, label: timerLabel };
+  PROGRESS.timer     = { startTs: timerStartTs,     elapsed: timerElapsed,     visible: timerVisible,     label: timerLabel };
+  PROGRESS.bossTimer = { startTs: bossTimerStartTs, elapsed: bossTimerElapsed, visible: bossTimerVisible, label: bossTimerLabel };
   PROGRESS.activeBoss = activeBoss;
+  PROGRESS.overlay = overlayCfg;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(PROGRESS));
   } catch (e) { console.error("[Progress] Speichern fehlgeschlagen:", e); }
@@ -238,6 +236,15 @@ function escAttr(str) {
   return String(str).replace(/'/g, "\\'").replace(/"/g, '\\"');
 }
 
+// Select all text in a contenteditable element (so a click overwrites the value).
+function selectAllText(el) {
+  var range = document.createRange();
+  range.selectNodeContents(el);
+  var sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // BOSS LEVEL PANEL
 // ═══════════════════════════════════════════════════════════════════════════
@@ -318,7 +325,7 @@ function toolboxInit() {
 }
 
 function toolboxOpenPanel(name) {
-  var panels = ['timer', 'filter'];
+  var panels = ['timer', 'filter', 'overlay'];
   var wasOpen = false;
   panels.forEach(function(p) {
     var item = document.getElementById('etb-item-' + p);
@@ -327,6 +334,26 @@ function toolboxOpenPanel(name) {
     item.classList.toggle('open', p === name && !item.classList.contains('open'));
     if (p !== name) item.classList.remove('open');
   });
+
+  if (!wasOpen) {
+    var item   = document.getElementById('etb-item-' + name);
+    var panel  = document.getElementById('etb-panel-' + name);
+    var tb     = document.getElementById('editor-toolbox');
+    if (item && panel && tb) {
+      var margin     = 10;
+      var viewH      = window.innerHeight;
+      var maxH       = viewH - 2 * margin;
+      var btnCenterY = item.getBoundingClientRect().top + item.getBoundingClientRect().height / 2;
+      // clamp so panel (worst-case: maxH tall, centered) stays within viewport
+      var top = Math.max(margin + maxH / 2, Math.min(viewH - margin - maxH / 2, btnCenterY));
+      var left = tb.getBoundingClientRect().right + 4;
+      panel.style.left      = left + 'px';
+      panel.style.top       = top + 'px';
+      panel.style.transform = 'translateY(-50%)';
+      panel.style.maxHeight = maxH + 'px';
+    }
+  }
+
   if (name === 'timer' && !wasOpen) toolboxFillTimeInputs();
 }
 
@@ -342,6 +369,24 @@ function toolboxFillTimeInputs() {
   if (hEl) hEl.value = h > 0 ? h : '';
   if (mEl) mEl.value = m > 0 ? m : '';
   if (sEl) sEl.value = sec > 0 ? sec : '';
+
+  var lEl = document.getElementById('etb-general-label');
+  if (lEl && document.activeElement !== lEl) lEl.value = timerLabel;
+
+  var bms  = bossTimerStartTs > 0 ? bossTimerElapsed + (Date.now() - bossTimerStartTs) : bossTimerElapsed;
+  var bs   = Math.floor(bms / 1000);
+  var bh   = Math.floor(bs / 3600);
+  var bm   = Math.floor((bs % 3600) / 60);
+  var bsec = bs % 60;
+  var bhEl = document.getElementById('etb-boss-elapsed-h');
+  var bmEl = document.getElementById('etb-boss-elapsed-m');
+  var bsEl = document.getElementById('etb-boss-elapsed-s');
+  if (bhEl) bhEl.value = bh > 0 ? bh : '';
+  if (bmEl) bmEl.value = bm > 0 ? bm : '';
+  if (bsEl) bsEl.value = bsec > 0 ? bsec : '';
+
+  var blEl = document.getElementById('etb-boss-label');
+  if (blEl && document.activeElement !== blEl) blEl.value = bossTimerLabel;
 }
 
 function toolboxSetElapsed() {
@@ -362,7 +407,7 @@ function toolboxSetElapsed() {
 document.addEventListener('click', function(e) {
   var toolbox = document.getElementById('editor-toolbox');
   if (toolbox && !toolbox.contains(e.target)) {
-    ['timer','filter'].forEach(function(p) {
+    ['timer','filter','overlay'].forEach(function(p) {
       var item = document.getElementById('etb-item-' + p);
       if (item) item.classList.remove('open');
     });
@@ -382,7 +427,16 @@ function toolboxToggleCell(cell, btnId) {
     updateTimerDisplay();
     if (timerVisible && timerStartTs > 0) startTimerTick();
     else if (!timerVisible && timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-    toolboxSetBtnActive(btnId, timerVisible);
+    toolboxSyncTimerVisBtn();
+    saveProgress();
+    return;
+  }
+  if (cell === 'BO1') {
+    bossTimerVisible = !bossTimerVisible;
+    updateBossTimerDisplay();
+    if (bossTimerVisible && bossTimerStartTs > 0) startBossTimerTick();
+    else if (!bossTimerVisible && bossTimerInterval) { clearInterval(bossTimerInterval); bossTimerInterval = null; }
+    toolboxSyncBossTimerVisBtn();
     saveProgress();
     return;
   }
@@ -390,12 +444,61 @@ function toolboxToggleCell(cell, btnId) {
   if (flagMap[cell]) toggleFlag(flagMap[cell]);
 }
 
+function timerLabelChanged(val) {
+  timerLabel = val.trim();
+  updateTimerDisplay();
+  saveProgress();
+}
+
+function bossTimerLabelChanged(val) {
+  bossTimerLabel = val.trim();
+  updateBossTimerDisplay();
+  saveProgress();
+}
+
 function toolboxSyncFilterButtons() {
   toolboxSetBtnActive('etb-btn-R1', showBase);
   toolboxSetBtnActive('etb-btn-R2', showDLC);
   toolboxSetBtnActive('etb-btn-T1', showOnlyOpen);
   toolboxSetBtnActive('etb-btn-T2', showOnlyDone);
+  toolboxSyncTimerVisBtn();
+}
+
+// Overlay widget toggles (read by the OBS overlay via PROGRESS.overlay).
+var OVERLAY_TOGGLE_IDS = {
+  deaths:   'etb-ov-deaths',
+  progress: 'etb-ov-progress',
+  pinned:   'etb-ov-pinned',
+  list:     'etb-ov-list',
+  victory:  'etb-ov-victory'
+};
+
+function toolboxToggleOverlay(key, btnId) {
+  overlayCfg[key] = !overlayCfg[key];
+  toolboxSetBtnActive(btnId, overlayCfg[key]);
+  saveProgress();
+}
+
+function toolboxSyncOverlayButtons() {
+  Object.keys(OVERLAY_TOGGLE_IDS).forEach(function(key) {
+    toolboxSetBtnActive(OVERLAY_TOGGLE_IDS[key], overlayCfg[key] !== false);
+  });
+}
+
+function toolboxSyncTimerVisBtn() {
   toolboxSetBtnActive('etb-btn-O1', timerVisible);
+  var btn = document.getElementById("etb-btn-O1");
+  if (!btn) return;
+  var t = btn.querySelector(".etb-btn-text");
+  if (t) t.textContent = timerVisible ? "Ausblenden" : "Einblenden";
+}
+
+function toolboxSyncBossTimerVisBtn() {
+  toolboxSetBtnActive('etb-btn-BO1', bossTimerVisible);
+  var btn = document.getElementById("etb-btn-BO1");
+  if (!btn) return;
+  var t = btn.querySelector(".etb-btn-text");
+  if (t) t.textContent = bossTimerVisible ? "Ausblenden" : "Einblenden";
 }
 
 function toolboxToggleTimer() {
@@ -441,6 +544,66 @@ function toolboxUpdateTimerDisplay() {
   var disp = document.getElementById("etb-timer-display");
   if (!disp) return;
   var ms = timerStartTs > 0 ? timerElapsed + (Date.now() - timerStartTs) : timerElapsed;
+  disp.textContent = fmtTime(ms);
+}
+
+// Boss-Timer toolbox functions
+function toolboxToggleBossTimer() {
+  if (bossTimerStartTs > 0) {
+    bossTimerElapsed += Date.now() - bossTimerStartTs;
+    bossTimerStartTs = 0;
+    if (bossTimerInterval) { clearInterval(bossTimerInterval); bossTimerInterval = null; }
+  } else {
+    bossTimerStartTs = Date.now();
+    startBossTimerTick();
+  }
+  saveProgress();
+  updateBossTimerDisplay();
+  toolboxSyncBossTimerUI();
+}
+
+function toolboxBossTimerReset() {
+  bossTimerStartTs = 0;
+  bossTimerElapsed = 0;
+  if (bossTimerInterval) { clearInterval(bossTimerInterval); bossTimerInterval = null; }
+  saveProgress();
+  updateBossTimerDisplay();
+  toolboxSyncBossTimerUI();
+}
+
+function toolboxSetBossElapsed() {
+  var h   = Math.max(0, parseInt(document.getElementById('etb-boss-elapsed-h').value) || 0);
+  var m   = Math.max(0, Math.min(59, parseInt(document.getElementById('etb-boss-elapsed-m').value) || 0));
+  var s   = Math.max(0, Math.min(59, parseInt(document.getElementById('etb-boss-elapsed-s').value) || 0));
+  var ms  = (h * 3600 + m * 60 + s) * 1000;
+  bossTimerElapsed = ms;
+  if (bossTimerStartTs > 0) bossTimerStartTs = Date.now();
+  saveProgress();
+  updateBossTimerDisplay();
+  toolboxSyncBossTimerUI();
+  showToast("⏱ Boss-Timer gesetzt: " + fmtTime(ms), 2000);
+}
+
+function toolboxSyncBossTimerUI() {
+  var btn  = document.getElementById("etb-btn-BL1");
+  var disp = document.getElementById("etb-boss-timer-display");
+  if (!btn || !disp) return;
+  var running = bossTimerStartTs > 0;
+  btn.classList.toggle("timer-running", running);
+  var iconEl = btn.querySelector(".etb-btn-icon");
+  var textEl = btn.querySelector(".etb-btn-text");
+  if (iconEl) iconEl.textContent = running ? "⏸" : "▶";
+  if (textEl) textEl.textContent = running ? "Pause" : "Start";
+  disp.classList.toggle("running", running);
+  if (bossToolboxTick) clearInterval(bossToolboxTick);
+  if (running) bossToolboxTick = setInterval(toolboxUpdateBossTimerDisplay, 500);
+  toolboxUpdateBossTimerDisplay();
+}
+
+function toolboxUpdateBossTimerDisplay() {
+  var disp = document.getElementById("etb-boss-timer-display");
+  if (!disp) return;
+  var ms = bossTimerStartTs > 0 ? bossTimerElapsed + (Date.now() - bossTimerStartTs) : bossTimerElapsed;
   disp.textContent = fmtTime(ms);
 }
 
@@ -563,6 +726,15 @@ function menuAdjustDeaths(delta) {
   applyBossChange(menuState.area, menuState.boss, "deaths", newDeaths);
 }
 
+// Direct entry: typing a number into the editable death count.
+function menuSetDeaths(value) {
+  var n = parseInt(value, 10);
+  if (isNaN(n) || n < 0) n = 0;
+  menuState.deaths = n;
+  updateMenuDisplay();
+  applyBossChange(menuState.area, menuState.boss, "deaths", n);
+}
+
 function menuToggleDone() {
   var newDone = !menuState.done;
   menuState.done = newDone;
@@ -610,7 +782,8 @@ document.addEventListener("keydown", function(e) {
 
   if (menuOpen) {
     var tag = (e.target && e.target.tagName) ? e.target.tagName.toUpperCase() : "";
-    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT"
+        || (e.target && e.target.isContentEditable)) return;
     if (e.key === "+" || e.key === "=") { e.preventDefault(); menuAdjustDeaths(1);  return; }
     if (e.key === "-" || e.key === "_") { e.preventDefault(); menuAdjustDeaths(-1); return; }
   }
@@ -719,6 +892,16 @@ function adjustFieldDeaths(type, delta) {
   recomputeStats();
 }
 
+// Direct entry: typing a number into an editable field-death count.
+function setFieldDeaths(type, value) {
+  var n = parseInt(value, 10);
+  if (isNaN(n) || n < 0) n = 0;
+  fieldDeaths[type] = n;
+  document.getElementById("fdeath-val-" + type).textContent = n;
+  saveProgress();
+  recomputeStats();
+}
+
 function updateFieldDeathsVisibility() {
   var chipBase = document.getElementById("fdeath-chip-base");
   var chipDlc  = document.getElementById("fdeath-chip-dlc");
@@ -747,6 +930,22 @@ function updateTimerDisplay() {
 function startTimerTick() {
   if (timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(updateTimerDisplay, 1000);
+}
+
+function updateBossTimerDisplay() {
+  var chip = document.getElementById("boss-timer-chip");
+  if (!chip) return;
+  if (!bossTimerVisible) { chip.style.display = "none"; return; }
+  chip.style.display = "flex";
+  var elapsed = bossTimerStartTs > 0 ? bossTimerElapsed + (Date.now() - bossTimerStartTs) : bossTimerElapsed;
+  document.getElementById("val-boss-timer").textContent = fmtTime(elapsed);
+  var labelEl = document.getElementById("val-boss-timer-label");
+  if (labelEl) labelEl.textContent = bossTimerLabel ? bossTimerLabel + ":" : "Boss:";
+}
+
+function startBossTimerTick() {
+  if (bossTimerInterval) clearInterval(bossTimerInterval);
+  bossTimerInterval = setInterval(updateBossTimerDisplay, 1000);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1430,11 +1629,21 @@ function init() {
   updateFieldDeathsVisibility();
 
   toolboxInit();
+  (function centerToolbox() {
+    var tb = document.getElementById('editor-toolbox');
+    if (tb) tb.style.marginTop = (-tb.offsetHeight / 2) + 'px';
+  })();
   toolboxSyncFilterButtons();
+  toolboxSyncOverlayButtons();
   toolboxSyncTimerUI();
+  toolboxSyncBossTimerUI();
+  toolboxSyncBossTimerVisBtn();
 
   updateTimerDisplay();
   if (timerVisible && timerStartTs > 0) startTimerTick();
+
+  updateBossTimerDisplay();
+  if (bossTimerVisible && bossTimerStartTs > 0) startBossTimerTick();
 
   updateActiveBossDisplay();
 
