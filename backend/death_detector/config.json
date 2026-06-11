@@ -8,7 +8,7 @@
   "capture_fps": 3,
   "death_cooldown_seconds": 6.0,
 
-  "phrases": ["DU BIST GESTORBEN"],
+  "phrases": ["IHR SEID GESTORBEN", "DU BIST GESTORBEN"],
   "key_token": "GESTORBEN",
   "match_min_ratio": 0.8,
 
@@ -28,11 +28,11 @@
 
   "detect_active_boss": true,
   "healthbar_region": null,
-  "active_boss_min_ratio": 0.72,
-  "active_boss_confirm_frames": 2,
+  "active_boss_min_ratio": 0.65,
+  "active_boss_confirm_frames": 1,
   "active_boss_clear_seconds": 10.0,
   "hb_gate_text_min": 0.001,
   "hb_gate_text_max": 0.5,
 
-  "debug": false
+  "debug": true
 }
