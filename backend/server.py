@@ -62,6 +62,20 @@ def write_progress(path, obj):
             raise
 
 
+def _frontend_mtime():
+    """Return the highest mtime across all files in the frontend tree."""
+    latest = 0
+    for root, _dirs, files in os.walk(WEB_ROOT):
+        for f in files:
+            try:
+                t = os.path.getmtime(os.path.join(root, f))
+                if t > latest:
+                    latest = t
+            except OSError:
+                pass
+    return latest
+
+
 def make_handler(data_path):
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
@@ -81,8 +95,12 @@ def make_handler(data_path):
             self.wfile.write(body)
 
         def do_GET(self):
-            if self.path.split("?")[0] == "/api/progress":
+            p = self.path.split("?")[0]
+            if p == "/api/progress":
                 self._send_json(200, read_progress(data_path))
+                return
+            if p == "/api/version":
+                self._send_json(200, {"v": _frontend_mtime()})
                 return
             super().do_GET()
 

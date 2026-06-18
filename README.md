@@ -3,23 +3,23 @@
 This repository contains two cooperating parts:
 
 - A lightweight Web UI (Boss Tracker) that displays boss progress and receives events, plus a stream overlay (`frontend/overlay`) that mirrors the same progress for OBS.
-- A screen-based detector using OCR (`backend/death_detector`) that detects deaths, the active boss name, and boss kills — all from screen pixels.
+- A screen-based detector using OCR (`backend/death_detector`) that detects deaths, the active boss name, and boss kills - all from screen pixels.
 
 The components communicate over a local WebSocket bridge; the web UI listens and reacts to the events described below.
 
 
-Design notes
+## Design notes
 
 - The detector is read-only and does not touch the game process or memory - it only reads screen pixels (like any streamer death counter), so it is intended to be anti-cheat-safe.
 - Boss kills are read from the golden "GEGNER GEFALLEN" / "GROSSER GEGNER GEFALLEN" banner the game shows on a kill. The banner doesn't name the boss, so the kill is credited to the currently active boss (the name read above the health bar). No per-boss setup is needed; if no active boss is known the kill is ignored and you can tick it off manually in the UI.
 
-Event types (all on `ws://127.0.0.1:8777`)
+## Event types (all on `ws://127.0.0.1:8777`)
 
 - `{type: "death"}` - a death detected by OCR. The web UI calls `registerDeath()`.
 - `{type: "active_boss", boss: "Name"}` - active boss detected from the healthbar OCR; used to attribute subsequent deaths/kills automatically.
 - `{type: "kill", boss: "Name"}` - the kill banner was detected; the web UI calls `registerBossKill()` for the active boss.
 
-Quickstart - Web UI
+## Quickstart - Web UI
 
 Run the bundled server (standard library only, no extra deps). It serves the
 web app and persists progress to a JSON file on disk:
@@ -32,7 +32,7 @@ python3 backend/server.py
 Options: `--port 9000`, `--data /path/to/progress.json` (default
 `backend/data/progress.json`). Ctrl+C to stop.
 
-Persistence
+## Persistence
 
 - Progress is stored on disk by the server (`backend/data/progress.json`) and
   survives clearing the browser cache; it is shared across browsers on the same
@@ -43,19 +43,19 @@ Persistence
 - You can still open the static files without the server (e.g.
   `python3 -m http.server`), in which case progress lives only in localStorage.
 
-Stream Overlay (frontend/overlay)
+## Stream Overlay (frontend/overlay)
 
 A transparent overlay for OBS that mirrors the tracker's progress (deaths, boss
 completion, pinned bosses, timer) with kill animations. It is a read-only view
 of the same on-disk store, served by the same server.
 
-OBS setup
+### OBS setup
 
 - Add a Browser Source pointing at `http://127.0.0.1:8000/overlay/`.
 - Display modes are chosen via URL parameters, so you can add several sources:
-  - `…/overlay/` — normal scrolling boss list.
-  - `…/overlay/?view=simple` — compact view (header + pinned bosses only).
-  - `…/overlay/?mode=top` — Top 10 most-died bosses.
+  - `…/overlay/` - normal scrolling boss list.
+  - `…/overlay/?view=simple` - compact view (header + pinned bosses only).
+  - `…/overlay/?mode=top` - Top 10 most-died bosses.
 - Individual widgets can be toggled from the tracker's editor toolbox (the
   "Overlay" panel: deaths, progress, pinned, boss list, victory animation).
   These settings are saved with the progress and the overlay follows live.
@@ -73,7 +73,7 @@ OBS setup
   overlay follows within ~1.5s.
 - Files: `frontend/overlay/index.html` (markup) + `overlay.css` + `overlay.js`.
 
-Data flow (important)
+## Data flow (important)
 
 The overlay does not talk to the detector directly. The chain is:
 
@@ -83,12 +83,12 @@ detector (ws 8777) → tracker page (attributes the event, saves progress)
 ```
 
 So for automatic live updates the tracker page must be open somewhere (a
-background tab is fine) — it holds the attribution logic; the detector alone
+background tab is fine) - it holds the attribution logic; the detector alone
 does not write progress. Manual edits in the tracker show up in the overlay too.
 
-Death Detector (backend/death_detector)
+## Death Detector (backend/death_detector)
 
-Requirements
+### Requirements
 
 - Python 3.9+ and the Python dependencies listed in `backend/requirements.txt`.
 - Tesseract OCR with the German language pack installed.
@@ -103,11 +103,11 @@ pip install -r requirements.txt
 cd death_detector
 ```
 
-Tesseract
+### Tesseract
 
 Install Tesseract (for Windows use the UB-Mannheim build) and ensure the German language data (`deu`) is installed. Either add the `tesseract` binary to your PATH or set the `tesseract_cmd` option in `backend/death_detector/config.json` to the full executable path.
 
-Configure capture regions
+### Configure capture regions
 
 The detector samples a band of the screen by default. To capture a screenshot for tuning:
 
@@ -121,7 +121,7 @@ Edit `backend/death_detector/config.json` and set `region` (left, top, width, he
 python death_detector.py --test    # prints OCR results and saves test images
 ```
 
-Run the detector
+### Run the detector
 
 ```bash
 python death_detector.py
@@ -129,14 +129,14 @@ python death_detector.py
 
 The detector opens a WebSocket (default `ws://127.0.0.1:8777`) and emits `{type: "death"}`, `{type: "active_boss", boss}` and `{type: "kill", boss}` events. Use `--test` to check the death and kill banner detection plus the active-boss read in one shot.
 
-Configuration
+### Configuration
 
 - `backend/death_detector/config.json`: capture regions, OCR language, thresholds and cooldowns. Relevant kill keys:
   - `detect_kills`: turn boss-kill detection on/off.
   - `felled_phrases` / `felled_key_token`: the kill-banner text to match (German defaults: `GEGNER GEFALLEN`, key token `GEFALLEN`).
   - `felled_match_min_ratio`, `kill_cooldown_seconds`, `felled_gate_dark_ratio`, `felled_gate_gold_ratio`: matching/gating tuning.
 
-Troubleshooting
+### Troubleshooting
 
 - "Tesseract not found": install Tesseract and ensure `tesseract_cmd` or PATH is correct.
 - No deaths detected: run `--test` during a visible death screen, lower `match_min_ratio`, or widen `region`.
@@ -145,7 +145,7 @@ Troubleshooting
 - False positives: increase the relevant `*_match_min_ratio` or tighten the region.
 - Active boss flicker: increase `active_boss_confirm_frames` in `backend/death_detector/config.json`.
 
-Integration notes
+### Integration notes
 
 - The detector is optional: the web UI works with or without it and reconnects every few seconds if it is offline.
 - Death and kill attribution to a boss works best when an active boss is set (automatically by the detector or manually via the UI).

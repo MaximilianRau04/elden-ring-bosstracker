@@ -477,9 +477,12 @@ body.searching .area-card .area-toggle-icon { opacity: 0.3; pointer-events: none
 .pinned-deaths { font-family: 'Cinzel', serif; font-size: 13px; color: var(--gold); }
 
 /* ─── AREA CARDS ─── */
-.areas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.areas-grid { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
 
 .area-card {
+  flex: 1 1 320px;
+  min-width: 280px;
+  max-width: 100%;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -803,7 +806,8 @@ body.searching .area-card .area-toggle-icon { opacity: 0.3; pointer-events: none
 @media (max-width: 700px) {
   .login-widget { position: static; justify-content: flex-end; margin-bottom: 12px; }
   .site-header { padding-top: 20px; }
-  .areas-grid { grid-template-columns: 1fr; }
+  .areas-grid { flex-direction: column; }
+  .area-card { max-width: 100%; }
   .controls-bar { flex-direction: column; align-items: flex-start; }
   .refresh-indicator { margin-left: 0; }
   .divider { display: none; }

@@ -9,6 +9,20 @@
 <link rel="stylesheet" href="style.css">
 <!-- Everything is served locally - no external requests. -->
 <script src="assets/chart.umd.min.js"></script>
+<script>
+(function () {
+  var v = null;
+  setInterval(function () {
+    fetch("/api/version", { cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (v === null) { v = d.v; return; }
+        if (d.v !== v) location.reload();
+      })
+      .catch(function () {});
+  }, 1000);
+})();
+</script>
 </head>
 <body>
 

@@ -92,10 +92,11 @@ let generalTimerElapsed = 0;
 let generalTimerVisible = false;
 let generalTimerLabel   = "Timer";
 
-let bossTimerStartTs = 0;
-let bossTimerElapsed = 0;
-let bossTimerVisible = false;
-let bossTimerLabel   = "Boss";
+let bossTimerStartTs    = 0;
+let bossTimerElapsed    = 0;
+let bossTimerVisible    = false;
+let bossTimerLabel      = "Boss";
+let currentBossDeaths   = null; // null = kein Match, 0+ = gefundener Boss
 
 function fmtOverlayTime(ms) {
   const diff    = Math.floor(ms / 1000);
@@ -127,7 +128,8 @@ function updateTimerDisplays() {
       const ms = bossTimerStartTs > 0
         ? bossTimerElapsed + (Date.now() - bossTimerStartTs)
         : bossTimerElapsed;
-      bossEl.innerText = `⏳ ${bossTimerLabel}: ${fmtOverlayTime(ms)}`;
+      const deathsSuffix = currentBossDeaths !== null ? `  · † ${currentBossDeaths}` : "";
+      bossEl.innerText = `⏳ ${bossTimerLabel}: ${fmtOverlayTime(ms)}${deathsSuffix}`;
     }
   }
 }
@@ -266,6 +268,16 @@ async function loadData() {
       areas[area].bosses.push({ boss, done, deaths, pinned });
     });
   });
+
+  // current boss deaths (matched by bossTimerLabel)
+  const rawLabel = (bossTimer.label || "").trim();
+  if (rawLabel) {
+    const normLabel = normalize(rawLabel);
+    const found = allBossesFlat.find(b => normalize(b.boss) === normLabel);
+    currentBossDeaths = found ? found.deaths : null;
+  } else {
+    currentBossDeaths = null;
+  }
 
   // total deaths = boss deaths + field deaths (matches the tracker)
   let fd = 0;
