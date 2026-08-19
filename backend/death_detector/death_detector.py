@@ -226,7 +226,10 @@ def detect_death(img_bgr, cfg):
 
 def detect_felled(img_bgr, cfg):
     """Return (is_felled, best_ratio, best_text) for the boss-kill banner."""
-    if not looks_like_felled(img_bgr, cfg):
+    gate = looks_like_felled(img_bgr, cfg)
+    if cfg.get("debug") and gate:
+        print("[debug] felled gate=True")
+    if not gate:
         return False, 0.0, ""
     lang = cfg["ocr_lang"]
     best_ratio, best_text = 0.0, ""
@@ -238,6 +241,8 @@ def detect_felled(img_bgr, cfg):
             best_ratio, best_text = ratio, cleaned
         if best_ratio >= 1.0:
             break
+    if cfg.get("debug"):
+        print("[debug] felled ratio=%.2f text=%r" % (best_ratio, best_text))
     return best_ratio >= cfg["felled_match_min_ratio"], best_ratio, best_text
 
 
@@ -318,7 +323,12 @@ def boss_name_images(img_bgr):
 
 def detect_boss_name(img_bgr, cfg, variants):
     """Return (canonical_name|None, best_ratio, raw_text)."""
-    if not variants or not hb_gate(img_bgr, cfg):
+    if not variants:
+        return None, 0.0, ""
+    gate = hb_gate(img_bgr, cfg)
+    if not gate:
+        if cfg.get("debug"):
+            print("[debug] boss gate=False")
         return None, 0.0, ""
     lang = cfg["ocr_lang"]
     min_ratio = cfg["active_boss_min_ratio"]
@@ -330,6 +340,9 @@ def detect_boss_name(img_bgr, cfg, variants):
             best_ratio, best_text, best_name = ratio, txt, name
         if name and ratio >= 0.95:
             break
+    if cfg.get("debug"):
+        print("[debug] boss gate=True ratio=%.2f name=%r text=%r"
+              % (best_ratio, best_name, best_text))
     return best_name, best_ratio, best_text
 
 
@@ -443,8 +456,6 @@ def detector_loop(cfg, bridge, region_override=None, variants=None):
             # health bar we last saw (current_active).
             if kills_enabled:
                 is_felled, fratio, ftext = detect_felled(frame, cfg)
-                if cfg.get("debug") and fratio > 0.4:
-                    print("[debug] felled ratio=%.2f text=%r" % (fratio, ftext))
                 if is_felled:
                     if not felled_visible and (now - last_kill_ts) >= kill_cooldown:
                         last_kill_ts = now
@@ -472,9 +483,6 @@ def detector_loop(cfg, bridge, region_override=None, variants=None):
             if hb_enabled:
                 hb_frame = grab(sct, hb_region)
                 name, hb_ratio, hb_text = detect_boss_name(hb_frame, cfg, variants)
-                if cfg.get("debug") and hb_ratio > 0.5:
-                    print("[debug] boss ratio=%.2f name=%r text=%r"
-                          % (hb_ratio, name, hb_text))
                 if name:
                     last_boss_seen_ts = now
                     if name == pending_name:
