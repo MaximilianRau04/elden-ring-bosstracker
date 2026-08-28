@@ -91,7 +91,7 @@ does not write progress. Manual edits in the tracker show up in the overlay too.
 ### Requirements
 
 - Python 3.9+ and the Python dependencies listed in `backend/requirements.txt`.
-- Tesseract OCR with the German language pack installed.
+- Tesseract OCR with the German and English language packs installed (`deu` + `eng`; `eng` ships with Tesseract by default).
 
 Install Python deps:
 
@@ -105,7 +105,9 @@ cd death_detector
 
 ### Tesseract
 
-Install Tesseract (for Windows use the UB-Mannheim build) and ensure the German language data (`deu`) is installed. Either add the `tesseract` binary to your PATH or set the `tesseract_cmd` option in `backend/death_detector/config.json` to the full executable path.
+Install Tesseract (for Windows use the UB-Mannheim build) and ensure the German language data (`deu`) is installed; `eng` is normally bundled already. Either add the `tesseract` binary to your PATH or set the `tesseract_cmd` option in `backend/death_detector/config.json` to the full executable path.
+
+The death and kill-banner text (`phrases`/`felled_phrases` in config.json) are only matched in German — if you play with an English game client, the death/kill banners won't be detected, but active-boss detection (the health-bar name) recognizes both English and German boss names. Boss names are English by default in `frontend/data/bosses.js` (the canonical name used by the UI, localStorage and the detector); `window.BOSS_ALIASES` at the bottom of that file carries the matching German name per boss purely so the OCR detector also recognizes a German game client.
 
 ### Configure capture regions
 

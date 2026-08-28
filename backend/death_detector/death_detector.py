@@ -57,7 +57,7 @@ def load_config():
         "phrases": ["DU BIST GESTORBEN"],
         "key_token": "GESTORBEN",
         "match_min_ratio": 0.8,
-        "ocr_lang": "deu",
+        "ocr_lang": "deu+eng",
         "tesseract_cmd": None,
         "gate_dark_ratio": 0.5,
         "gate_red_ratio": 0.0015,
@@ -255,8 +255,12 @@ def norm_name(s):
 def load_boss_variants():
     """Read boss names from bosses.js → [(canonical, [normalized variants])].
 
-    Multi-phase entries like "Bestienkleriker / Maliketh, …" are also split on
-    / + & so a health bar that only shows one phase still matches."""
+    The canonical name is always the English string (matches the frontend's
+    progress keys). Multi-phase entries like "Beast Clergyman / Maliketh, …"
+    are also split on / + & so a health bar that only shows one phase still
+    matches. German names from window.BOSS_ALIASES are folded in as extra
+    variants of the same canonical English name, so the game can run in either
+    language without changing what gets broadcast to the frontend."""
     if not os.path.exists(BOSSES_JS):
         print("[boss] bosses.js not found at %s — active-boss detection off."
               % BOSSES_JS)
@@ -267,18 +271,32 @@ def load_boss_variants():
     except Exception as e:
         print("[boss] could not read bosses.js: %s" % e)
         return []
+
     start = txt.find("BOSS_DATA")
-    if start != -1:
-        txt = txt[start:]
-    raw = re.findall(r'"((?:[^"\\]|\\.)+)"', txt)
+    close = txt.find("\n];", start) if start != -1 else -1
+    data_txt = txt[start:close] if start != -1 and close != -1 else txt[start:]
+    raw = re.findall(r'"((?:[^"\\]|\\.)+)"', data_txt)
     names = [n for n in raw if n not in ("area", "isDLC", "bosses")]
+
+    aliases = {}
+    m = re.search(r'BOSS_ALIASES\s*=\s*(\{.*?\n\});', txt, re.S)
+    if m:
+        try:
+            aliases = json.loads(m.group(1))
+        except Exception as e:
+            print("[boss] could not parse BOSS_ALIASES: %s" % e)
+
     variants, seen = [], set()
     for n in names:
         if n in seen:
             continue
         seen.add(n)
+        parts = [n] + re.split(r"[/+&]", n)
+        for alias in aliases.get(n, []):
+            parts.append(alias)
+            parts += re.split(r"[/+&]", alias)
         vs = []
-        for part in [n] + re.split(r"[/+&]", n):
+        for part in parts:
             nn = norm_name(part)
             if len(nn) >= 4:
                 vs.append(nn)
