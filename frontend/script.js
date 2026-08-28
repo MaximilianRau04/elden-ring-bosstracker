@@ -115,6 +115,8 @@ function loadProgress() {
   bossTimerLabel    = PROGRESS.bossTimer.label || "";
   activeBoss     = PROGRESS.activeBoss || { area: null, boss: null };
   overlayCfg     = Object.assign({ deaths: true, progress: true, pinned: true, list: true, victory: true }, PROGRESS.overlay || {});
+
+  if (migrateLegacyDates()) saveProgress();
 }
 
 function saveProgress() {
@@ -202,11 +204,43 @@ function fmtTime(ms) {
   return h + ":" + m + ":" + sec;
 }
 
-function todayStr() {
+// Stored date format is always ISO (YYYY-MM-DD) - unambiguous and sorts
+// correctly as a plain string, regardless of UI language. Only the DISPLAY
+// (formatDate below) changes with the language toggle.
+function todayISO() {
   var d = new Date();
-  return String(d.getDate()).padStart(2, "0") + "." +
-         String(d.getMonth() + 1).padStart(2, "0") + "." +
-         d.getFullYear();
+  return d.getFullYear() + "-" +
+         String(d.getMonth() + 1).padStart(2, "0") + "-" +
+         String(d.getDate()).padStart(2, "0");
+}
+
+var MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+// ISO date ("YYYY-MM-DD") -> localized display string.
+function formatDate(iso) {
+  var parts = String(iso).split("-");
+  if (parts.length !== 3) return iso; // defensive: unexpected/legacy format
+  var y = parts[0], m = parseInt(parts[1], 10), d = parseInt(parts[2], 10);
+  if (I18N.getLang() === "en") {
+    return MONTH_ABBR[m - 1] + " " + d + ", " + y;
+  }
+  return String(d).padStart(2, "0") + "." + String(m).padStart(2, "0") + "." + y;
+}
+
+// One-time migration: older versions stored the "date defeated" as
+// German-formatted DD.MM.YYYY. Convert any leftovers to ISO so sorting
+// (renderChart) and formatDate() above work correctly.
+function migrateLegacyDates() {
+  var changed = false;
+  Object.keys(PROGRESS.bosses).forEach(function(key) {
+    var p = PROGRESS.bosses[key];
+    if (p && p.date && /^\d{2}\.\d{2}\.\d{4}$/.test(p.date)) {
+      var parts = p.date.split(".");
+      p.date = parts[2] + "-" + parts[1] + "-" + parts[0];
+      changed = true;
+    }
+  });
+  return changed;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -831,7 +865,7 @@ function applyBossChange(area, boss, field, value) {
 
   if (field === "done") {
     p.done = value;
-    p.date = value ? (p.date || todayStr()) : null;
+    p.date = value ? (p.date || todayISO()) : null;
     if (!value) p.level = p.level; // keep the level
   } else if (field === "deaths") {
     p.deaths = Math.max(0, value);
@@ -1172,10 +1206,7 @@ function renderChart(allBosses) {
     byDate[b.date].push(b.boss);
   });
 
-  var dates = Object.keys(byDate).sort(function(a, b) {
-    var pa = a.split("."); var pb = b.split(".");
-    return new Date(pa[2], pa[1]-1, pa[0]) - new Date(pb[2], pb[1]-1, pb[0]);
-  });
+  var dates = Object.keys(byDate).sort(); // ISO (YYYY-MM-DD) sorts correctly as plain strings
 
   if (dates.length === 0) {
     document.getElementById("chart-section").style.display = "none";
@@ -1193,6 +1224,7 @@ function renderChart(allBosses) {
 
   var counts   = dates.map(function(d) { return byDate[d].length; });
   var bossList = dates.map(function(d) { return byDate[d]; });
+  var labels   = dates.map(formatDate);
 
   var ctx = document.getElementById("boss-chart").getContext("2d");
   if (chartInstance) chartInstance.destroy();
@@ -1200,7 +1232,7 @@ function renderChart(allBosses) {
   chartInstance = new Chart(ctx, {
     type: "bar",
     data: {
-      labels: dates,
+      labels: labels,
       datasets: [{
         label: I18N.t("chart.legendLabel"),
         data: counts,
