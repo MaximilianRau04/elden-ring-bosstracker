@@ -9,20 +9,6 @@
 <link rel="stylesheet" href="style.css">
 <!-- Everything is served locally - no external requests. -->
 <script src="assets/chart.umd.min.js"></script>
-<script>
-(function () {
-  var v = null;
-  setInterval(function () {
-    fetch("/api/version", { cache: "no-store" })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        if (v === null) { v = d.v; return; }
-        if (d.v !== v) location.reload();
-      })
-      .catch(function () {});
-  }, 1000);
-})();
-</script>
 </head>
 <body>
 
@@ -31,26 +17,26 @@
 
   <!-- Button: Timer -->
   <div class="etb-item" id="etb-item-timer">
-    <button class="etb-icon-btn" onclick="toolboxOpenPanel('timer')" data-tip="Timer" data-tip-always="1">
+    <button class="etb-icon-btn" onclick="toolboxOpenPanel('timer')" data-tip="Timer" data-i18n-tip="toolbox.timer" data-tip-always="1">
       <span>⏳</span>
     </button>
     <div class="etb-panel" id="etb-panel-timer">
-      <div class="etb-panel-title">Timer</div>
+      <div class="etb-panel-title" data-i18n="timer.title">Timer</div>
 
       <!-- ALLGEMEINER TIMER -->
-      <div class="etb-timer-section-label">Allgemein</div>
+      <div class="etb-timer-section-label" data-i18n="timer.general">Allgemein</div>
       <input type="text" class="etb-timer-label-input" id="etb-general-label"
-             placeholder="Label…"
+             placeholder="Label…" data-i18n-ph="timer.labelPlaceholder"
              oninput="timerLabelChanged(this.value)">
       <div class="etb-timer-display" id="etb-timer-display">00:00:00</div>
       <button class="etb-action-btn" id="etb-btn-L1" onclick="toolboxToggleTimer()">
-        <span class="etb-btn-icon">▶</span><span class="etb-btn-text">Start</span>
+        <span class="etb-btn-icon">▶</span><span class="etb-btn-text" data-i18n="timer.start">Start</span>
       </button>
       <button class="etb-action-btn etb-btn-reset" onclick="toolboxTimerReset()">
-        <span class="etb-btn-icon">↺</span><span class="etb-btn-text">Reset</span>
+        <span class="etb-btn-icon">↺</span><span class="etb-btn-text" data-i18n="timer.reset">Reset</span>
       </button>
       <button class="etb-action-btn etb-btn-toggle" id="etb-btn-O1" onclick="toolboxToggleCell('O1','etb-btn-O1')">
-        <span class="etb-btn-icon">👁</span><span class="etb-btn-text">Einblenden</span>
+        <span class="etb-btn-icon">👁</span><span class="etb-btn-text" data-i18n="timer.show">Einblenden</span>
       </button>
       <div class="etb-time-set">
         <input type="number" class="etb-time-input" id="etb-elapsed-h"
@@ -64,24 +50,24 @@
         <input type="number" class="etb-time-input" id="etb-elapsed-s"
                min="0" max="59" placeholder="00"
                onkeydown="if(event.key==='Enter')toolboxSetElapsed()">
-        <button class="etb-time-set-btn" onclick="toolboxSetElapsed()" data-tip="Timer auf diese Zeit setzen" data-tip-always="1">↵</button>
+        <button class="etb-time-set-btn" onclick="toolboxSetElapsed()" data-tip="Timer auf diese Zeit setzen" data-i18n-tip="timer.setTip" data-tip-always="1">↵</button>
       </div>
 
       <!-- BOSS TIMER -->
       <div class="etb-timer-divider"></div>
-      <div class="etb-timer-section-label">Boss</div>
+      <div class="etb-timer-section-label" data-i18n="timer.boss">Boss</div>
       <input type="text" class="etb-timer-label-input" id="etb-boss-label"
-             placeholder="Bossname…"
+             placeholder="Bossname…" data-i18n-ph="timer.bossLabelPlaceholder"
              oninput="bossTimerLabelChanged(this.value)">
       <div class="etb-timer-display" id="etb-boss-timer-display">00:00:00</div>
       <button class="etb-action-btn" id="etb-btn-BL1" onclick="toolboxToggleBossTimer()">
-        <span class="etb-btn-icon">▶</span><span class="etb-btn-text">Start</span>
+        <span class="etb-btn-icon">▶</span><span class="etb-btn-text" data-i18n="timer.start">Start</span>
       </button>
       <button class="etb-action-btn etb-btn-reset" onclick="toolboxBossTimerReset()">
-        <span class="etb-btn-icon">↺</span><span class="etb-btn-text">Reset</span>
+        <span class="etb-btn-icon">↺</span><span class="etb-btn-text" data-i18n="timer.reset">Reset</span>
       </button>
       <button class="etb-action-btn etb-btn-toggle" id="etb-btn-BO1" onclick="toolboxToggleCell('BO1','etb-btn-BO1')">
-        <span class="etb-btn-icon">👁</span><span class="etb-btn-text">Einblenden</span>
+        <span class="etb-btn-icon">👁</span><span class="etb-btn-text" data-i18n="timer.show">Einblenden</span>
       </button>
       <div class="etb-time-set">
         <input type="number" class="etb-time-input" id="etb-boss-elapsed-h"
@@ -95,56 +81,63 @@
         <input type="number" class="etb-time-input" id="etb-boss-elapsed-s"
                min="0" max="59" placeholder="00"
                onkeydown="if(event.key==='Enter')toolboxSetBossElapsed()">
-        <button class="etb-time-set-btn" onclick="toolboxSetBossElapsed()" data-tip="Boss-Timer auf diese Zeit setzen" data-tip-always="1">↵</button>
+        <button class="etb-time-set-btn" onclick="toolboxSetBossElapsed()" data-tip="Boss-Timer auf diese Zeit setzen" data-i18n-tip="timer.bossSetTip" data-tip-always="1">↵</button>
       </div>
     </div>
   </div>
 
   <!-- Button: Filter -->
   <div class="etb-item" id="etb-item-filter">
-    <button class="etb-icon-btn" onclick="toolboxOpenPanel('filter')" data-tip="Filter" data-tip-always="1">
+    <button class="etb-icon-btn" onclick="toolboxOpenPanel('filter')" data-tip="Filter" data-i18n-tip="toolbox.filter" data-tip-always="1">
       <span>⚔</span>
     </button>
     <div class="etb-panel" id="etb-panel-filter">
-      <div class="etb-panel-title">Filter</div>
+      <div class="etb-panel-title" data-i18n="filter.title">Filter</div>
       <button class="etb-action-btn etb-btn-toggle" id="etb-btn-T1" onclick="toolboxToggleCell('T1','etb-btn-T1')">
-        <span class="etb-btn-icon">○</span><span class="etb-btn-text">Nur Offen</span>
+        <span class="etb-btn-icon">○</span><span class="etb-btn-text" data-i18n="filter.openOnly">Nur Offen</span>
       </button>
       <button class="etb-action-btn etb-btn-toggle" id="etb-btn-T2" onclick="toolboxToggleCell('T2','etb-btn-T2')">
-        <span class="etb-btn-icon">✓</span><span class="etb-btn-text">Nur Erledigt</span>
+        <span class="etb-btn-icon">✓</span><span class="etb-btn-text" data-i18n="filter.doneOnly">Nur Erledigt</span>
       </button>
       <button class="etb-action-btn etb-btn-toggle" id="etb-btn-R1" onclick="toolboxToggleCell('R1','etb-btn-R1')">
-        <span class="etb-btn-icon">⚔</span><span class="etb-btn-text">Base Game</span>
+        <span class="etb-btn-icon">⚔</span><span class="etb-btn-text" data-i18n="filter.baseGame">Base Game</span>
       </button>
       <button class="etb-action-btn etb-btn-toggle" id="etb-btn-R2" onclick="toolboxToggleCell('R2','etb-btn-R2')">
-        <span class="etb-btn-icon">●</span><span class="etb-btn-text">DLC</span>
+        <span class="etb-btn-icon">●</span><span class="etb-btn-text" data-i18n="filter.dlc">DLC</span>
       </button>
     </div>
   </div>
 
   <!-- Button: Overlay (controls what the OBS overlay shows) -->
   <div class="etb-item" id="etb-item-overlay">
-    <button class="etb-icon-btn" onclick="toolboxOpenPanel('overlay')" data-tip="Overlay" data-tip-always="1">
+    <button class="etb-icon-btn" onclick="toolboxOpenPanel('overlay')" data-tip="Overlay" data-i18n-tip="toolbox.overlay" data-tip-always="1">
       <span>🖥</span>
     </button>
     <div class="etb-panel" id="etb-panel-overlay">
-      <div class="etb-panel-title">Overlay</div>
+      <div class="etb-panel-title" data-i18n="overlayPanel.title">Overlay</div>
       <button class="etb-action-btn etb-btn-toggle" id="etb-ov-deaths" onclick="toolboxToggleOverlay('deaths','etb-ov-deaths')">
-        <span class="etb-btn-icon">💀</span><span class="etb-btn-text">Tode</span>
+        <span class="etb-btn-icon">💀</span><span class="etb-btn-text" data-i18n="overlayPanel.deaths">Tode</span>
       </button>
       <button class="etb-action-btn etb-btn-toggle" id="etb-ov-progress" onclick="toolboxToggleOverlay('progress','etb-ov-progress')">
-        <span class="etb-btn-icon">🏆</span><span class="etb-btn-text">Fortschritt</span>
+        <span class="etb-btn-icon">🏆</span><span class="etb-btn-text" data-i18n="overlayPanel.progress">Fortschritt</span>
       </button>
       <button class="etb-action-btn etb-btn-toggle" id="etb-ov-pinned" onclick="toolboxToggleOverlay('pinned','etb-ov-pinned')">
-        <span class="etb-btn-icon">📌</span><span class="etb-btn-text">Angepinnte</span>
+        <span class="etb-btn-icon">📌</span><span class="etb-btn-text" data-i18n="overlayPanel.pinned">Angepinnte</span>
       </button>
       <button class="etb-action-btn etb-btn-toggle" id="etb-ov-list" onclick="toolboxToggleOverlay('list','etb-ov-list')">
-        <span class="etb-btn-icon">📜</span><span class="etb-btn-text">Bossliste</span>
+        <span class="etb-btn-icon">📜</span><span class="etb-btn-text" data-i18n="overlayPanel.list">Bossliste</span>
       </button>
       <button class="etb-action-btn etb-btn-toggle" id="etb-ov-victory" onclick="toolboxToggleOverlay('victory','etb-ov-victory')">
-        <span class="etb-btn-icon">✨</span><span class="etb-btn-text">Sieg-Animation</span>
+        <span class="etb-btn-icon">✨</span><span class="etb-btn-text" data-i18n="overlayPanel.victory">Sieg-Animation</span>
       </button>
     </div>
+  </div>
+
+  <!-- Button: Language toggle -->
+  <div class="etb-item" id="etb-item-lang">
+    <button class="etb-icon-btn" id="etb-lang-btn" onclick="toggleLanguage()" data-tip="Sprache / Language" data-tip-always="1">
+      <span id="etb-lang-label">DE</span>
+    </button>
   </div>
 
 </div>
@@ -153,7 +146,7 @@
 
   <header class="site-header">
     <h1>Elden Ring</h1>
-    <p class="subtitle">Boss Tracker &amp; Fortschrittsübersicht</p>
+    <p class="subtitle" data-i18n="subtitle">Boss Tracker &amp; Fortschrittsübersicht</p>
     <div class="header-ornament">
       <span class="ornament-rune">⚔</span>
     </div>
@@ -162,23 +155,23 @@
   <div class="stats-bar">
     <div class="stat-chip deaths-chip" id="stat-deaths">
       <span class="icon">💀</span>
-      <span>Tode:</span>
+      <span data-i18n="stats.deaths">Tode:</span>
       <span class="value" id="val-deaths">-</span>
     </div>
-    <div class="stat-chip stat-chip-clickable" id="stat-bosses" onclick="openBossLevelPanel()" data-tip="Besiegte Bosse nach Level sortiert anzeigen" data-tip-always="1">
+    <div class="stat-chip stat-chip-clickable" id="stat-bosses" onclick="openBossLevelPanel()" data-tip="Besiegte Bosse nach Level sortiert anzeigen" data-i18n-tip="stats.bossesTip" data-tip-always="1">
       <span class="icon">🏆</span>
-      <span>Bosse:</span>
+      <span data-i18n="stats.bosses">Bosse:</span>
       <span class="value" id="val-bosses">-</span>
       <span class="stat-chip-arrow">▾</span>
     </div>
     <div class="stat-chip" id="stat-percent">
       <span class="icon">📜</span>
-      <span>Abschluss:</span>
+      <span data-i18n="stats.completion">Abschluss:</span>
       <span class="value" id="val-percent">-</span>
     </div>
     <div class="stat-chip avg-chip" id="stat-avg">
       <span class="icon">⚖️</span>
-      <span>Ø Tode/Boss:</span>
+      <span data-i18n="stats.avgDeaths">Ø Tode/Boss:</span>
       <span class="value" id="val-avg">-</span>
     </div>
     <div class="stat-chip" id="timer-chip">
@@ -195,9 +188,9 @@
 
   <!-- ── FIELD DEATHS (editors only) ── -->
   <div class="field-deaths-bar" id="field-deaths-bar">
-    <span class="ctrl-label">Sonstige Tode:</span>
+    <span class="ctrl-label" data-i18n="fieldDeaths.label">Sonstige Tode:</span>
     <div class="field-deaths-chip" id="fdeath-chip-base">
-      <span class="field-deaths-label">⚔ Base Game</span>
+      <span class="field-deaths-label" data-i18n="fieldDeaths.base">⚔ Base Game</span>
       <div class="field-deaths-controls">
         <button class="fdeath-btn fdeath-minus" onclick="adjustFieldDeaths('base',-1)">−</button>
         <span class="fdeath-val" id="fdeath-val-base"
@@ -209,7 +202,7 @@
     </div>
     <div class="divider" id="fdeath-divider"></div>
     <div class="field-deaths-chip" id="fdeath-chip-dlc">
-      <span class="field-deaths-label">🌑 DLC</span>
+      <span class="field-deaths-label" data-i18n="fieldDeaths.dlc">🌑 DLC</span>
       <div class="field-deaths-controls">
         <button class="fdeath-btn fdeath-minus" onclick="adjustFieldDeaths('dlc',-1)">−</button>
         <span class="fdeath-val" id="fdeath-val-dlc"
@@ -223,36 +216,36 @@
 
   <!-- ── ACTIVE BOSS (deaths get attributed here) ── -->
   <div class="active-boss-bar" id="active-boss-bar" style="display:none;">
-    <span class="active-boss-label">🎯 Aktiver Boss:</span>
+    <span class="active-boss-label" data-i18n="activeBoss.label">🎯 Aktiver Boss:</span>
     <span class="active-boss-name" id="active-boss-name">-</span>
-    <span class="active-boss-hint">erkannte Tode werden hier gezählt</span>
-    <button class="active-boss-clear" id="active-boss-clear" onclick="clearActiveBoss()" data-tip="Aktiven Boss aufheben (Tode zählen dann als Feldtod)" data-tip-always="1">✕</button>
+    <span class="active-boss-hint" data-i18n="activeBoss.hint">erkannte Tode werden hier gezählt</span>
+    <button class="active-boss-clear" id="active-boss-clear" onclick="clearActiveBoss()" data-tip="Aktiven Boss aufheben (Tode zählen dann als Feldtod)" data-i18n-tip="activeBoss.clearTip" data-tip-always="1">✕</button>
   </div>
 
   <div class="controls-bar">
-    <span class="ctrl-label">Anzeige:</span>
+    <span class="ctrl-label" data-i18n="controls.show">Anzeige:</span>
     <button class="toggle-btn" id="btn-basegame" onclick="toggleFlag('base')">
-      <span class="dot"></span> Base Game
+      <span class="dot"></span> <span data-i18n="controls.baseGame">Base Game</span>
     </button>
     <button class="toggle-btn" id="btn-dlc" onclick="toggleFlag('dlc')">
-      <span class="dot"></span> Shadow of the Erdtree DLC
+      <span class="dot"></span> <span data-i18n="controls.dlc">Shadow of the Erdtree DLC</span>
     </button>
     <button class="toggle-btn" id="btn-mainbosses" onclick="toggleFlag('main')">
-      <span class="dot"></span> Main Bosse
+      <span class="dot"></span> <span data-i18n="controls.mainBosses">Main Bosse</span>
     </button>
     <div class="divider"></div>
     <button class="toggle-btn" id="btn-expand-all" onclick="setAllCollapsed(false)">
-      <span class="dot"></span> Alle aufklappen
+      <span class="dot"></span> <span data-i18n="controls.expandAll">Alle aufklappen</span>
     </button>
     <button class="toggle-btn" id="btn-collapse-all" onclick="setAllCollapsed(true)">
-      <span class="dot"></span> Alle zuklappen
+      <span class="dot"></span> <span data-i18n="controls.collapseAll">Alle zuklappen</span>
     </button>
     <div style="width:100%;height:0;flex-basis:100%;"></div>
     <button class="toggle-btn done-btn" id="btn-done" onclick="toggleFlag('done')">
-      <span class="dot"></span> ✓ Erledigt
+      <span class="dot"></span> <span data-i18n="controls.done">✓ Erledigt</span>
     </button>
     <button class="toggle-btn open-btn" id="btn-open" onclick="toggleFlag('open')">
-      <span class="dot"></span> ○ Offen
+      <span class="dot"></span> <span data-i18n="controls.open">○ Offen</span>
     </button>
   </div>
 
@@ -261,8 +254,8 @@
     <div class="ranking-header" onclick="toggleRanking()">
       <div class="ranking-header-left">
         <span class="ranking-toggle-icon">▼</span>
-        <span class="ranking-title">☠ Tode-Ranking</span>
-        <span class="ranking-subtitle" id="ranking-subtitle">- die härtesten Begegnungen</span>
+        <span class="ranking-title" data-i18n="ranking.title">☠ Tode-Ranking</span>
+        <span class="ranking-subtitle" id="ranking-subtitle" data-i18n="ranking.subtitleDefault">- die härtesten Begegnungen</span>
       </div>
     </div>
     <div class="ranking-body">
@@ -280,24 +273,25 @@
       id="search-input"
       type="text"
       placeholder="Boss suchen… z.B. Malenia, Margit, Mohg"
+      data-i18n-ph="search.placeholder"
       autocomplete="off"
       spellcheck="false"
       oninput="onSearchInput(this.value)"
     >
     <span class="search-result-count" id="search-result-count"></span>
-    <span class="search-clear" id="search-clear" onclick="clearSearch()" data-tip="Suche leeren" data-tip-always="1">✕</span>
-    <span class="search-shortcut-hint" data-tip="Tastenkürzel: Strg+F = Suche, Esc = Schließen, +/− = Tode (im Boss-Menü)" data-tip-always="1">⌨</span>
+    <span class="search-clear" id="search-clear" onclick="clearSearch()" data-tip="Suche leeren" data-i18n-tip="search.clearTip" data-tip-always="1">✕</span>
+    <span class="search-shortcut-hint" data-tip="Tastenkürzel: Strg+F = Suche, Esc = Schließen, +/− = Tode (im Boss-Menü)" data-i18n-tip="search.shortcutTip" data-tip-always="1">⌨</span>
   </div>
 
   <section id="pinned-section">
-    <div class="pinned-header">📌 Angepinnte Bosse</div>
+    <div class="pinned-header" data-i18n="pinned.title">📌 Angepinnte Bosse</div>
     <div class="pinned-list" id="pinned-list"></div>
   </section>
 
   <main id="main-content">
     <div class="loading-overlay" id="loading-overlay">
       <div class="loading-spinner"></div>
-      <span>Lade Daten aus den Archiven&hellip;</span>
+      <span data-i18n="loading">Lade Daten aus den Archiven&hellip;</span>
     </div>
     <div class="areas-grid" id="areas-grid" style="display:none;"></div>
   </main>
@@ -307,8 +301,8 @@
       <div class="ranking-header" onclick="toggleChart()">
         <div class="ranking-header-left">
           <span class="ranking-toggle-icon" id="chart-toggle-icon">▼</span>
-          <span class="ranking-title">📅 Bosse pro Tag</span>
-          <span class="ranking-subtitle" id="chart-subtitle">- Fortschritt im Zeitverlauf</span>
+          <span class="ranking-title" data-i18n="chart.title">📅 Bosse pro Tag</span>
+          <span class="ranking-subtitle" id="chart-subtitle" data-i18n="chart.subtitleDefault">- Fortschritt im Zeitverlauf</span>
         </div>
       </div>
       <div class="ranking-body" id="chart-body">
@@ -323,7 +317,7 @@
 
 <div class="toast" id="toast"></div>
 
-<footer class="site-footer">
+<footer class="site-footer" data-i18n="footer">
   Elden Ring Boss Tracker &bull; lokal &amp; offline - Fortschritt im Browser gespeichert
 </footer>
 
@@ -334,32 +328,32 @@
     <div class="boss-menu-areaname" id="menu-area-name">-</div>
   </div>
   <div class="boss-menu-body">
-    <span class="boss-menu-section-label">Tode</span>
+    <span class="boss-menu-section-label" data-i18n="menu.deaths">Tode</span>
     <div class="boss-menu-deaths-row">
-      <button class="boss-menu-deaths-btn danger" onclick="menuAdjustDeaths(-1)" data-tip="−1 Tod" data-tip-always="1">−</button>
+      <button class="boss-menu-deaths-btn danger" onclick="menuAdjustDeaths(-1)" data-tip="−1 Tod" data-i18n-tip="menu.deathMinusTip" data-tip-always="1">−</button>
       <div>
         <div class="boss-menu-deaths-val" id="menu-deaths-val"
              contenteditable="true" inputmode="numeric"
              onfocus="selectAllText(this)" onblur="menuSetDeaths(this.textContent)"
              onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">0</div>
-        <div class="boss-menu-deaths-label">Tode</div>
+        <div class="boss-menu-deaths-label" data-i18n="menu.deaths">Tode</div>
       </div>
-      <button class="boss-menu-deaths-btn" onclick="menuAdjustDeaths(1)" data-tip="+1 Tod" data-tip-always="1">+</button>
+      <button class="boss-menu-deaths-btn" onclick="menuAdjustDeaths(1)" data-tip="+1 Tod" data-i18n-tip="menu.deathPlusTip" data-tip-always="1">+</button>
     </div>
     <div class="boss-menu-divider"></div>
-    <span class="boss-menu-section-label">Aktionen</span>
+    <span class="boss-menu-section-label" data-i18n="menu.actions">Aktionen</span>
     <div class="boss-menu-actions">
       <button class="boss-menu-action-btn" id="menu-done-btn" onclick="menuToggleDone()">
         <span class="action-icon" id="menu-done-icon">☐</span>
-        <span id="menu-done-label">Als besiegt markieren</span>
+        <span id="menu-done-label" data-i18n="menu.markDone">Als besiegt markieren</span>
       </button>
       <button class="boss-menu-action-btn" id="menu-pin-btn" onclick="menuTogglePin()">
         <span class="action-icon" id="menu-pin-icon">📌</span>
-        <span id="menu-pin-label">Anpinnen</span>
+        <span id="menu-pin-label" data-i18n="menu.pin">Anpinnen</span>
       </button>
       <button class="boss-menu-action-btn" id="menu-active-btn" onclick="menuToggleActive()">
         <span class="action-icon" id="menu-active-icon">🎯</span>
-        <span id="menu-active-label">Als aktiven Boss setzen</span>
+        <span id="menu-active-label" data-i18n="menu.setActive">Als aktiven Boss setzen</span>
       </button>
     </div>
   </div>
@@ -369,29 +363,30 @@
 
 <!-- ── BOSS LEVEL MODAL ── -->
 <div class="boss-level-backdrop" id="boss-level-backdrop" onclick="closeBossLevelPanel()"></div>
-<div class="boss-level-modal" id="boss-level-modal" role="dialog" aria-modal="true" aria-label="Besiegte Bosse nach Level">
+<div class="boss-level-modal" id="boss-level-modal" role="dialog" aria-modal="true" aria-label="Besiegte Bosse nach Level" data-i18n-aria="bossLevel.ariaLabel">
   <div class="boss-level-inner">
     <div class="boss-level-header">
       <div class="boss-level-title">
         <span class="boss-level-title-icon">🏆</span>
         <div>
-          <h2>Besiegte Bosse in Reihenfolge</h2>
-          <span class="boss-level-subtitle" id="boss-level-subtitle">wird geladen…</span>
+          <h2 data-i18n="bossLevel.title">Besiegte Bosse in Reihenfolge</h2>
+          <span class="boss-level-subtitle" id="boss-level-subtitle" data-i18n="bossLevel.subtitleLoading">wird geladen…</span>
         </div>
       </div>
-      <button class="modal-close-btn" onclick="closeBossLevelPanel()" data-tip="Schließen" data-tip-always="1">✕</button>
+      <button class="modal-close-btn" onclick="closeBossLevelPanel()" data-tip="Schließen" data-i18n-tip="bossLevel.closeTip" data-tip-always="1">✕</button>
     </div>
     <div class="boss-level-table-head">
       <span class="blh-rank">#</span>
-      <span class="blh-level">Level</span>
-      <span class="blh-name">Boss</span>
-      <span class="blh-deaths">Tode</span>
+      <span class="blh-level" data-i18n="bossLevel.level">Level</span>
+      <span class="blh-name" data-i18n="bossLevel.boss">Boss</span>
+      <span class="blh-deaths" data-i18n="bossLevel.deaths">Tode</span>
     </div>
     <div class="boss-level-list" id="boss-level-list"></div>
   </div>
 </div>
 
 <script src="data/bosses.js"></script>
+<script src="data/i18n.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

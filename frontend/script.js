@@ -209,6 +209,36 @@ function todayStr() {
          d.getFullYear();
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// LANGUAGE TOGGLE (see data/i18n.js)
+// ═══════════════════════════════════════════════════════════════════════════
+
+function syncLangButton() {
+  var label = document.getElementById("etb-lang-label");
+  if (label) label.textContent = I18N.getLang().toUpperCase();
+}
+
+function toggleLanguage() {
+  I18N.setLang(I18N.getLang() === "de" ? "en" : "de");
+  syncLangButton();
+  I18N.applyStaticI18n();
+  toolboxSyncTimerVisBtn();
+  toolboxSyncBossTimerVisBtn();
+  toolboxSyncTimerUI();
+  toolboxSyncBossTimerUI();
+  updateTimerDisplay();
+  updateBossTimerDisplay();
+  updateActiveBossDisplay();
+  updateMenuDisplay();
+  // force ranking/chart to re-render even though the underlying data didn't change
+  prevRankingSnapshot = "";
+  prevChartSnapshot   = "";
+  processData();
+  if (document.getElementById("boss-level-modal").classList.contains("open")) {
+    renderBossLevelPanel();
+  }
+}
+
 function showToast(msg, duration) {
   duration = duration || 3500;
   var el = document.getElementById("toast");
@@ -285,24 +315,26 @@ function renderBossLevelPanel() {
   });
 
   var subtitle = document.getElementById("boss-level-subtitle");
-  if (subtitle) subtitle.textContent = done.length + " Bosse mit Level besiegt";
+  if (subtitle) subtitle.textContent = I18N.tf("bossLevel.subtitle", done.length);
 
   if (done.length === 0) {
-    list.innerHTML = '<div class="boss-level-empty">Noch keine Bosse mit Level-Eintrag besiegt.</div>';
+    list.innerHTML = '<div class="boss-level-empty">' + escHtml(I18N.t("bossLevel.empty")) + '</div>';
     return;
   }
 
   list.innerHTML = done.map(function(b, i) {
     var isMain = MAIN_BOSSES.has(b.boss);
     var displayLevel = String(b.level).split("/")[0].trim();
-    var levelLabel   = b.isDLC ? 'Scadu-Lvl.&nbsp;' : 'Lvl&nbsp;';
+    var levelLabel   = (b.isDLC ? I18N.t("bossLevel.scaduLvlBadge") : I18N.t("bossLevel.lvlBadge")) + '&nbsp;';
+    var bossLabel  = I18N.bossLabel(b.boss);
+    var areaLabel  = I18N.areaLabel(b.area);
 
     return '<div class="boss-level-entry' + (isMain ? " main" : "") + '">'
       + '<span class="boss-level-rank">' + (i + 1) + '</span>'
       + '<span class="boss-level-badge' + (b.isDLC ? ' dlc' : '') + '">' + levelLabel + escHtml(displayLevel) + '</span>'
       + '<div class="boss-level-info">'
-      + '<span class="boss-level-name' + (isMain ? " main" : "") + '" data-tip="' + escAttr(b.boss) + '" data-tip-always="1">' + escHtml(b.boss) + '</span>'
-      + '<span class="boss-level-area">' + escHtml(b.area) + '</span>'
+      + '<span class="boss-level-name' + (isMain ? " main" : "") + '" data-tip="' + escHtml(bossLabel) + '" data-tip-always="1">' + escHtml(bossLabel) + '</span>'
+      + '<span class="boss-level-area">' + escHtml(areaLabel) + '</span>'
       + '</div>'
       + '<span class="boss-level-deaths' + (b.deaths === 0 ? " nodeath" : "") + '">'
       + (b.deaths > 0 ? '†' + b.deaths : '†-')
@@ -401,7 +433,7 @@ function toolboxSetElapsed() {
   saveProgress();
   updateTimerDisplay();
   toolboxSyncTimerUI();
-  showToast("⏱ Timer gesetzt: " + fmtTime(ms), 2000);
+  showToast(I18N.tf("toast.timerSet", fmtTime(ms)), 2000);
 }
 
 document.addEventListener('click', function(e) {
@@ -490,7 +522,7 @@ function toolboxSyncTimerVisBtn() {
   var btn = document.getElementById("etb-btn-O1");
   if (!btn) return;
   var t = btn.querySelector(".etb-btn-text");
-  if (t) t.textContent = timerVisible ? "Ausblenden" : "Einblenden";
+  if (t) t.textContent = timerVisible ? I18N.t("timer.hide") : I18N.t("timer.show");
 }
 
 function toolboxSyncBossTimerVisBtn() {
@@ -498,7 +530,7 @@ function toolboxSyncBossTimerVisBtn() {
   var btn = document.getElementById("etb-btn-BO1");
   if (!btn) return;
   var t = btn.querySelector(".etb-btn-text");
-  if (t) t.textContent = bossTimerVisible ? "Ausblenden" : "Einblenden";
+  if (t) t.textContent = bossTimerVisible ? I18N.t("timer.hide") : I18N.t("timer.show");
 }
 
 function toolboxToggleTimer() {
@@ -533,7 +565,7 @@ function toolboxSyncTimerUI() {
   var iconEl = btn.querySelector(".etb-btn-icon");
   var textEl = btn.querySelector(".etb-btn-text");
   if (iconEl) iconEl.textContent = running ? "⏸" : "▶";
-  if (textEl) textEl.textContent = running ? "Pause" : "Start";
+  if (textEl) textEl.textContent = running ? I18N.t("timer.pause") : I18N.t("timer.start");
   disp.classList.toggle("running", running);
   if (toolboxTimerTick) clearInterval(toolboxTimerTick);
   if (running) toolboxTimerTick = setInterval(toolboxUpdateTimerDisplay, 500);
@@ -581,7 +613,7 @@ function toolboxSetBossElapsed() {
   saveProgress();
   updateBossTimerDisplay();
   toolboxSyncBossTimerUI();
-  showToast("⏱ Boss-Timer gesetzt: " + fmtTime(ms), 2000);
+  showToast(I18N.tf("toast.bossTimerSet", fmtTime(ms)), 2000);
 }
 
 function toolboxSyncBossTimerUI() {
@@ -593,7 +625,7 @@ function toolboxSyncBossTimerUI() {
   var iconEl = btn.querySelector(".etb-btn-icon");
   var textEl = btn.querySelector(".etb-btn-text");
   if (iconEl) iconEl.textContent = running ? "⏸" : "▶";
-  if (textEl) textEl.textContent = running ? "Pause" : "Start";
+  if (textEl) textEl.textContent = running ? I18N.t("timer.pause") : I18N.t("timer.start");
   disp.classList.toggle("running", running);
   if (bossToolboxTick) clearInterval(bossToolboxTick);
   if (running) bossToolboxTick = setInterval(toolboxUpdateBossTimerDisplay, 500);
@@ -630,8 +662,8 @@ function openBossMenu(e, areaName, bossName) {
     pinned: bossData.pinned
   };
 
-  document.getElementById("menu-boss-name").textContent = bossName;
-  document.getElementById("menu-area-name").textContent = areaName;
+  document.getElementById("menu-boss-name").textContent = I18N.bossLabel(bossName);
+  document.getElementById("menu-area-name").textContent = I18N.areaLabel(areaName);
   updateMenuDisplay();
   positionMenu(e);
 
@@ -678,11 +710,11 @@ function updateMenuDisplay() {
   if (menuState.done) {
     doneBtn.className     = "boss-menu-action-btn active";
     doneIcon.textContent  = "☑";
-    doneLabel.textContent = "Als nicht besiegt markieren";
+    doneLabel.textContent = I18N.t("menu.markOpen");
   } else {
     doneBtn.className     = "boss-menu-action-btn";
     doneIcon.textContent  = "☐";
-    doneLabel.textContent = "Als besiegt markieren";
+    doneLabel.textContent = I18N.t("menu.markDone");
   }
 
   var pinBtn   = document.getElementById("menu-pin-btn");
@@ -691,11 +723,11 @@ function updateMenuDisplay() {
   if (menuState.pinned) {
     pinBtn.className     = "boss-menu-action-btn active-pin";
     pinIcon.textContent  = "📍";
-    pinLabel.textContent = "Anpinnung entfernen";
+    pinLabel.textContent = I18N.t("menu.unpin");
   } else {
     pinBtn.className     = "boss-menu-action-btn";
     pinIcon.textContent  = "📌";
-    pinLabel.textContent = "Anpinnen";
+    pinLabel.textContent = I18N.t("menu.pin");
   }
 
   var activeBtn   = document.getElementById("menu-active-btn");
@@ -703,7 +735,7 @@ function updateMenuDisplay() {
   var isActive    = activeBoss.boss === menuState.boss && activeBoss.area === menuState.area;
   if (activeBtn) {
     activeBtn.className     = "boss-menu-action-btn" + (isActive ? " active" : "");
-    activeLabel.textContent = isActive ? "Ist aktiver Boss (aufheben)" : "Als aktiven Boss setzen";
+    activeLabel.textContent = isActive ? I18N.t("menu.clearActive") : I18N.t("menu.setActive");
   }
 }
 
@@ -711,10 +743,10 @@ function menuToggleActive() {
   var isActive = activeBoss.boss === menuState.boss && activeBoss.area === menuState.area;
   if (isActive) {
     setActiveBoss(null, null);
-    showToast("🎯 Aktiver Boss aufgehoben", 2000);
+    showToast(I18N.t("toast.activeCleared"), 2000);
   } else {
     setActiveBoss(menuState.area, menuState.boss);
-    showToast("🎯 Aktiver Boss: " + menuState.boss, 2000);
+    showToast(I18N.tf("toast.activeSet", I18N.bossLabel(menuState.boss)), 2000);
   }
   updateMenuDisplay();
 }
@@ -826,7 +858,7 @@ function applyBossChange(area, boss, field, value) {
   }
 
   if (field === "done" && value === true && !oldDone && MAIN_BOSSES.has(boss)) {
-    showToast("✔ " + boss + " besiegt!");
+    showToast(I18N.tf("toast.bossDefeated", I18N.bossLabel(boss)));
   }
 
   // A defeated boss is no longer the one you're fighting → release it.
@@ -924,7 +956,7 @@ function updateTimerDisplay() {
   var elapsed = timerStartTs > 0 ? timerElapsed + (Date.now() - timerStartTs) : timerElapsed;
   document.getElementById("val-timer").textContent = fmtTime(elapsed);
   var labelEl = document.getElementById("val-timer-label");
-  if (labelEl) labelEl.textContent = timerLabel ? timerLabel + ":" : "Timer:";
+  if (labelEl) labelEl.textContent = timerLabel ? timerLabel + ":" : I18N.t("timer.defaultLabel");
 }
 
 function startTimerTick() {
@@ -940,7 +972,7 @@ function updateBossTimerDisplay() {
   var elapsed = bossTimerStartTs > 0 ? bossTimerElapsed + (Date.now() - bossTimerStartTs) : bossTimerElapsed;
   document.getElementById("val-boss-timer").textContent = fmtTime(elapsed);
   var labelEl = document.getElementById("val-boss-timer-label");
-  if (labelEl) labelEl.textContent = bossTimerLabel ? bossTimerLabel + ":" : "Boss:";
+  if (labelEl) labelEl.textContent = bossTimerLabel ? bossTimerLabel + ":" : I18N.t("timer.bossDefaultLabel");
 }
 
 function startBossTimerTick() {
@@ -1027,7 +1059,7 @@ function applySearch() {
     var areaMatches = 0;
 
     rows.forEach(function(row) {
-      var bossName = row.dataset.boss || "";
+      var bossName = I18N.bossLabel(row.dataset.boss || "");
       var matches  = !query || bossName.toLowerCase().indexOf(query) !== -1;
       row.classList.toggle("search-nomatch", !matches);
       var nameEl = row.querySelector(".boss-name");
@@ -1045,14 +1077,14 @@ function applySearch() {
   });
 
   if (query.length > 0) {
-    countEl.textContent = totalMatches + " Treffer";
+    countEl.textContent = I18N.tf("search.results", totalMatches);
     countEl.classList.add("visible");
   } else {
     countEl.classList.remove("visible");
     countEl.textContent = "";
     grid.querySelectorAll(".boss-row[data-boss]").forEach(function(row) {
       var nameEl = row.querySelector(".boss-name");
-      if (nameEl) nameEl.innerHTML = escHtml(row.dataset.boss || "");
+      if (nameEl) nameEl.innerHTML = escHtml(I18N.bossLabel(row.dataset.boss || ""));
     });
   }
 }
@@ -1084,19 +1116,20 @@ function renderRanking(allBosses) {
   if (subtitle) {
     var doneBossCount = allBosses.filter(function(b) { return b.done; }).length;
     subtitle.textContent = top.length > 0
-      ? "- Top " + top.length + " von " + doneBossCount + " erledigten Bossen"
-      : "- noch keine Tode erfasst.";
+      ? I18N.tf("ranking.subtitle", top.length, doneBossCount)
+      : I18N.t("ranking.empty");
   }
 
   var listEl = document.getElementById("ranking-list");
   if (!listEl) return;
 
   if (top.length === 0) {
-    listEl.innerHTML = '<div class="ranking-empty">Noch keine Tode erfasst.</div>';
+    listEl.innerHTML = '<div class="ranking-empty">' + escHtml(I18N.t("ranking.empty")) + '</div>';
     return;
   }
 
   var medals = ["🥇", "🥈", "🥉"];
+  var numLocale = I18N.getLang() === "de" ? "de-DE" : "en-US";
 
   listEl.innerHTML = top.map(function(b, i) {
     var pct        = maxDeaths > 0 ? (b.deaths / maxDeaths * 100) : 0;
@@ -1105,14 +1138,15 @@ function renderRanking(allBosses) {
     var rankClass  = i === 0 ? "top1" : (i === 1 ? "top2" : (i === 2 ? "top3" : ""));
     var entryClass = i === 0 ? "rank-entry-1" : (i === 1 ? "rank-entry-2" : "");
     var delayStyle = "animation-delay:" + (i * 55) + "ms";
+    var bossLabel  = I18N.bossLabel(b.boss);
 
     return '<div class="ranking-entry ' + entryClass + '" style="' + delayStyle + '">'
       + '<span class="rank-number ' + rankClass + '">' + rankLabel + '</span>'
       + '<div class="rank-bar-wrap">'
-      + '<span class="boss-name' + (isMain ? " main" : "") + '" data-tip="' + escAttr(b.boss) + '">' + escHtml(b.boss) + '</span>'
+      + '<span class="boss-name' + (isMain ? " main" : "") + '" data-tip="' + escHtml(bossLabel) + '">' + escHtml(bossLabel) + '</span>'
       + '<div class="rank-bar-row">'
       + '<div class="rank-bar-bg"><div class="rank-bar-fill" style="width:' + pct + '%"></div></div>'
-      + '<span class="rank-deaths">' + b.deaths.toLocaleString("de-DE") + '<span class="unit"> †</span></span>'
+      + '<span class="rank-deaths">' + b.deaths.toLocaleString(numLocale) + '<span class="unit"> †</span></span>'
       + '</div></div></div>';
   }).join("");
 }
@@ -1151,8 +1185,11 @@ function renderChart(allBosses) {
   document.getElementById("chart-section").style.display = "block";
   var dayCount  = dates.length;
   var bossCount = allBosses.filter(function(b){ return b.done && b.date; }).length;
-  document.getElementById("chart-subtitle").textContent =
-    "- " + dayCount + (dayCount === 1 ? " Tag, " : " Tage, ") + bossCount + (bossCount === 1 ? " Boss erledigt" : " Bosse erledigt");
+  document.getElementById("chart-subtitle").textContent = I18N.tf(
+    "chart.subtitle",
+    dayCount, I18N.t(dayCount === 1 ? "chart.day" : "chart.days"),
+    bossCount, I18N.t(bossCount === 1 ? "chart.bossDone" : "chart.bossesDone")
+  );
 
   var counts   = dates.map(function(d) { return byDate[d].length; });
   var bossList = dates.map(function(d) { return byDate[d]; });
@@ -1165,7 +1202,7 @@ function renderChart(allBosses) {
     data: {
       labels: dates,
       datasets: [{
-        label: "Bosse besiegt",
+        label: I18N.t("chart.legendLabel"),
         data: counts,
         backgroundColor: "rgba(201, 164, 74, 0.35)",
         borderColor: "rgba(201, 164, 74, 0.85)",
@@ -1191,8 +1228,9 @@ function renderChart(allBosses) {
             title: function(items) { return items[0].label; },
             label: function(item) {
               var list = bossList[item.dataIndex];
-              return ["† " + list.length + " Boss" + (list.length > 1 ? "e" : "") + ":"]
-                .concat(list.map(function(n){ return "  · " + n; }));
+              var noun = I18N.t(list.length > 1 ? "chart.tooltipBosses" : "chart.tooltipBoss");
+              return ["† " + list.length + " " + noun + ":"]
+                .concat(list.map(function(n){ return "  · " + I18N.bossLabel(n); }));
             }
           }
         }
@@ -1293,7 +1331,7 @@ function recomputeStats(allBosses) {
     void el.offsetWidth;
     el.classList.add("death-flash");
   }
-  document.getElementById("val-deaths").textContent = globalDeaths.toLocaleString("de-DE");
+  document.getElementById("val-deaths").textContent = globalDeaths.toLocaleString(I18N.getLang() === "de" ? "de-DE" : "en-US");
   prevDeaths = globalDeaths;
 
   var totalBosses = allBosses.length;
@@ -1349,8 +1387,8 @@ function renderAreas(areas) {
       card.addEventListener("click", function(e) { openBossMenu(e, b.area, b.boss); });
       card.addEventListener("touchend", function(e) { e.preventDefault(); openBossMenu(e, b.area, b.boss); });
       card.innerHTML = '<span class="pinned-deaths">📌 ' + (b.deaths > 0 ? b.deaths : "-") + '</span>'
-        + '<span class="pinned-name' + (isMain ? " main-boss" : "") + '">' + escHtml(b.boss) + '</span>'
-        + '<span class="boss-edit-hint" data-tip="Bearbeiten" data-tip-always="1">✏</span>';
+        + '<span class="pinned-name' + (isMain ? " main-boss" : "") + '">' + escHtml(I18N.bossLabel(b.boss)) + '</span>'
+        + '<span class="boss-edit-hint" data-tip="' + escHtml(I18N.t("editHint")) + '" data-tip-always="1">✏</span>';
       pinnedList.appendChild(card);
     });
   } else {
@@ -1387,10 +1425,11 @@ function renderAreas(areas) {
       ? ' <span style="font-size:11px;color:var(--gold-dim);font-family:\'Crimson Pro\',serif;font-style:italic;">DLC</span>'
       : "";
 
+    var areaDisplay = I18N.areaLabel(areaName);
     card.innerHTML = '<div class="area-header" onclick="toggleArea(\'' + escAttr(areaName) + '\')">'
       + '<div class="area-header-left">'
       + '<span class="area-toggle-icon">▼</span>'
-      + '<span class="area-name" data-tip="' + escAttr(areaName) + '">' + escHtml(areaName) + dlcLabel + '</span>'
+      + '<span class="area-name" data-tip="' + escHtml(areaDisplay) + '">' + escHtml(areaDisplay) + dlcLabel + '</span>'
       + '</div>'
       + '<div class="area-progress-wrap">'
       + '<span class="area-fraction">' + data.done + '/' + data.total + '</span>'
@@ -1415,15 +1454,16 @@ function renderAreas(areas) {
 function renderBossRow(b, areaName) {
   var isMain     = MAIN_BOSSES.has(b.boss);
   var deathClass = b.deaths === 0 ? " boss-deaths-zero" : "";
+  var bossDisplay = I18N.bossLabel(b.boss);
 
   return '<div class="boss-row' + (b.done ? " done" : "") + ' editable"'
-    + ' data-boss="' + escAttr(b.boss) + '"'
-    + ' data-area="' + escAttr(areaName) + '"'
+    + ' data-boss="' + escHtml(b.boss) + '"'
+    + ' data-area="' + escHtml(areaName) + '"'
     + ' onclick="openBossMenu(event,\'' + escAttr(areaName) + '\',\'' + escAttr(b.boss) + '\')">'
     + '<span class="boss-deaths' + deathClass + '">' + (b.deaths > 0 ? "†" + b.deaths : "†-") + '</span>'
-    + '<span class="boss-name' + (isMain ? " main" : "") + '" data-tip="' + escAttr(b.boss) + '">' + escHtml(b.boss) + '</span>'
+    + '<span class="boss-name' + (isMain ? " main" : "") + '" data-tip="' + escHtml(bossDisplay) + '">' + escHtml(bossDisplay) + '</span>'
     + '<span class="boss-check">✓</span>'
-    + '<span class="boss-edit-hint" data-tip="Bearbeiten" data-tip-always="1">✏</span>'
+    + '<span class="boss-edit-hint" data-tip="' + escHtml(I18N.t("editHint")) + '" data-tip-always="1">✏</span>'
     + '</div>';
 }
 
@@ -1479,7 +1519,7 @@ function setActiveBoss(area, boss) {
 
 function clearActiveBoss() {
   setActiveBoss(null, null);
-  showToast("🎯 Aktiver Boss aufgehoben - Tode zählen als Feldtod", 2200);
+  showToast(I18N.t("toast.activeClearedFieldDeath"), 2200);
 }
 
 // Show/hide the active-boss bar at the top.
@@ -1490,7 +1530,7 @@ function updateActiveBossDisplay() {
     bar.style.display = "flex";
     var nameEl = document.getElementById("active-boss-name");
     if (nameEl) {
-      nameEl.textContent = activeBoss.boss;
+      nameEl.textContent = I18N.bossLabel(activeBoss.boss);
       nameEl.className = "active-boss-name" + (MAIN_BOSSES.has(activeBoss.boss) ? " main" : "");
     }
   } else {
@@ -1503,11 +1543,11 @@ function registerDeath() {
   if (activeBoss.boss && activeBoss.area) {
     var p = getBossProgress(activeBoss.area, activeBoss.boss);
     applyBossChange(activeBoss.area, activeBoss.boss, "deaths", p.deaths + 1);
-    showToast("💀 Tod +1: " + activeBoss.boss, 2000);
+    showToast(I18N.tf("toast.deathPlus1", I18N.bossLabel(activeBoss.boss)), 2000);
   } else {
     var type = showDLC && !showBase ? "dlc" : "base";
     adjustFieldDeaths(type, 1);
-    showToast("💀 Feldtod +1 (" + type + ")", 2000);
+    showToast(I18N.tf("toast.fieldDeathPlus1", type), 2000);
   }
 }
 
@@ -1545,7 +1585,7 @@ window.ERTracker = {
   setActiveBoss:    setActiveBoss,
   findBoss:         findBoss,
   resetAll: function() {
-    if (confirm("Wirklich allen Fortschritt löschen?")) {
+    if (confirm(I18N.t("confirm.resetAll"))) {
       localStorage.removeItem(STORAGE_KEY);
       location.reload();
     }
@@ -1597,7 +1637,7 @@ var detectorBridge = makeBridge("ws://127.0.0.1:8777", function(msg) {
       var t = findBoss(msg.boss);
       if (t && !(activeBoss.boss === t.boss && activeBoss.area === t.area)) {
         setActiveBoss(t.area, t.boss);
-        showToast("🎯 Aktiver Boss: " + t.boss, 2000);
+        showToast(I18N.tf("toast.activeSet", I18N.bossLabel(t.boss)), 2000);
       }
     } else if (activeBoss.boss) {
       // health bar gone (kill or left the arena) → deaths count as field deaths
@@ -1608,13 +1648,16 @@ var detectorBridge = makeBridge("ws://127.0.0.1:8777", function(msg) {
     var p = findBoss(msg.boss);
     var fresh = p && !getBossProgress(p.area, p.boss).done;
     if (registerBossKill(msg.boss) && fresh) {
-      showToast("⚔️ Boss besiegt: " + (p ? p.boss : msg.boss), 2500);
+      showToast(I18N.tf("toast.bossKilled", I18N.bossLabel(p ? p.boss : msg.boss)), 2500);
     }
   }
 });
 
 function init() {
   loadProgress();
+
+  I18N.applyStaticI18n();
+  syncLangButton();
 
   document.getElementById("btn-basegame").classList.toggle("active", showBase);
   document.getElementById("btn-dlc").classList.toggle("active", showDLC);

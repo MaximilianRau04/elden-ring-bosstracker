@@ -90,12 +90,12 @@ function fetchProgress() {
 let generalTimerStartTs = 0;
 let generalTimerElapsed = 0;
 let generalTimerVisible = false;
-let generalTimerLabel   = "Timer";
+let generalTimerLabel   = I18N.t("overlay.timerLabel");
 
 let bossTimerStartTs    = 0;
 let bossTimerElapsed    = 0;
 let bossTimerVisible    = false;
-let bossTimerLabel      = "Boss";
+let bossTimerLabel      = I18N.t("overlay.bossLabel");
 let currentBossDeaths   = null; // null = kein Match, 0+ = gefundener Boss
 
 function fmtOverlayTime(ms) {
@@ -141,6 +141,8 @@ setInterval(updateTimerDisplays, 1000);
 function renderTopDeaths(allBosses) {
   const container = document.getElementById("top-deaths-container");
   const list      = document.getElementById("top-deaths-list");
+  const title     = document.querySelector(".top-deaths-title");
+  if (title) title.textContent = I18N.t("overlay.topTitle");
 
   const sorted = allBosses
     .filter(b => b.deaths > 0)
@@ -164,7 +166,7 @@ function renderTopDeaths(allBosses) {
       <div style="flex:1; min-width:0;">
         <div style="display:flex; align-items:center;">
           <span class="top-deaths-count">† ${b.deaths}</span>
-          <span class="top-boss-name${isMain ? " is-main" : ""}${b.done ? " is-done" : ""}">${b.boss}</span>
+          <span class="top-boss-name${isMain ? " is-main" : ""}${b.done ? " is-done" : ""}">${I18N.bossLabel(b.boss)}</span>
         </div>
         <div class="top-deaths-bar-wrap">
           <div class="top-deaths-bar" style="width:${barPct}%"></div>
@@ -210,12 +212,12 @@ async function loadData() {
   generalTimerStartTs = Number(timer.startTs) || 0;
   generalTimerElapsed = Number(timer.elapsed) || 0;
   generalTimerVisible = !!timer.visible;
-  generalTimerLabel   = (timer.label || "").trim() || "Timer";
+  generalTimerLabel   = (timer.label || "").trim() || I18N.t("overlay.timerLabel");
 
   bossTimerStartTs = Number(bossTimer.startTs) || 0;
   bossTimerElapsed = Number(bossTimer.elapsed) || 0;
   bossTimerVisible = !!bossTimer.visible;
-  bossTimerLabel   = (bossTimer.label || "").trim() || "Boss";
+  bossTimerLabel   = (bossTimer.label || "").trim() || I18N.t("overlay.bossLabel");
 
   const normalize  = str => str.trim().toLowerCase().replace(/\s+/g, " ");
   const isMainBoss = name => MAIN_BOSSES.map(normalize).includes(normalize(name));
@@ -248,7 +250,7 @@ async function loadData() {
       } else if (!previousBossStates[key] && done && isMainBoss(boss)) {
         setTimeout(() => {
           document.querySelectorAll(".boss").forEach(el => {
-            if (el.querySelector(".boss-name")?.innerText === boss) triggerVictory(el);
+            if (el.querySelector(".boss-name")?.innerText === I18N.bossLabel(boss)) triggerVictory(el);
           });
         }, 100);
       }
@@ -296,7 +298,7 @@ async function loadData() {
     void deathEl.offsetWidth;
     deathEl.classList.add("death-animate");
   }
-  deathEl.innerText = `💀 Tode: ${globalDeaths}`;
+  deathEl.innerText = I18N.tf("overlay.deaths", globalDeaths);
   lastGlobalDeaths = globalDeaths;
 
   const bossEl = document.getElementById("total-boss-progress");
@@ -305,7 +307,7 @@ async function loadData() {
     void bossEl.offsetWidth;
     bossEl.classList.add("boss-animate");
   }
-  bossEl.innerText = `🏆 Bosse: ${globalDoneBosses} / ${globalTotalBosses}`;
+  bossEl.innerText = I18N.tf("overlay.bosses", globalDoneBosses, globalTotalBosses);
   lastDoneBosses = globalDoneBosses;
   lastTotalBosses = globalTotalBosses;
 
@@ -366,7 +368,7 @@ async function loadData() {
         const bossDiv = document.createElement("div");
         const isMain = MAIN_BOSSES.map(normalize).includes(normalize(b.boss));
         bossDiv.className = "boss pinned-boss" + (b.done ? " done" : "") + (isMain ? " main-boss" : "");
-        bossDiv.innerHTML = `<span class="deaths">💀 ${b.deaths}</span><span class="boss-name"><span class="ticker-inner">${b.boss}</span></span>`;
+        bossDiv.innerHTML = `<span class="deaths">💀 ${b.deaths}</span><span class="boss-name"><span class="ticker-inner">${I18N.bossLabel(b.boss)}</span></span>`;
         pinnedArea.appendChild(bossDiv);
       });
     }
@@ -387,7 +389,7 @@ async function loadData() {
     areaDiv.className = "area";
 
     areaDiv.innerHTML = `
-      <div class="area-title">${data.collapsed ? "▶" : "▼"} ${area}</div>
+      <div class="area-title">${data.collapsed ? "▶" : "▼"} ${I18N.areaLabel(area)}</div>
       <div class="area-progress">${data.done} / ${data.total}</div>
     `;
 
@@ -396,7 +398,7 @@ async function loadData() {
         const bossDiv = document.createElement("div");
         const isMain = MAIN_BOSSES.includes(b.boss);
         bossDiv.className = "boss" + (b.done ? " done" : "") + (isMain ? " main-boss" : "");
-        bossDiv.innerHTML = `<span class="deaths">† ${b.deaths}</span><span class="boss-name">${b.boss}</span>`;
+        bossDiv.innerHTML = `<span class="deaths">† ${b.deaths}</span><span class="boss-name">${I18N.bossLabel(b.boss)}</span>`;
         areaDiv.appendChild(bossDiv);
       });
     }
@@ -497,6 +499,11 @@ function spawnParticles() {
     setTimeout(() => p.remove(), 1000);
   }
 }
+
+(function applyOverlayStaticI18n() {
+  var vt = document.getElementById("victoryText");
+  if (vt) vt.textContent = I18N.t("overlay.victoryText");
+})();
 
 applyHeaderConfig();
 loadData();

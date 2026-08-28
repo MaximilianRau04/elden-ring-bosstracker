@@ -1015,6 +1015,13 @@ body.editor-mode { padding-left: 0; }
   border-color: rgba(201,164,74,0.55);
 }
 
+#etb-lang-btn {
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
 .etb-panel {
   position: fixed;
   left: 56px;
