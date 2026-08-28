@@ -39,3 +39,9 @@ coverage.xml
 
 # Local progress store (user data written by backend/server.py)
 backend/data/
+
+# Death detector debug output (--shot / --test) - may contain a captured
+# frame of the game/desktop
+backend/death_detector/screenshot.png
+backend/death_detector/test_region.png
+backend/death_detector/test_healthbar.png

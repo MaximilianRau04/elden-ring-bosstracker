@@ -11,7 +11,8 @@ The components communicate over a local WebSocket bridge; the web UI listens and
 ## Design notes
 
 - The detector is read-only and does not touch the game process or memory - it only reads screen pixels (like any streamer death counter), so it is intended to be anti-cheat-safe.
-- Boss kills are read from the golden "GEGNER GEFALLEN" / "GROSSER GEGNER GEFALLEN" banner the game shows on a kill. The banner doesn't name the boss, so the kill is credited to the currently active boss (the name read above the health bar). No per-boss setup is needed; if no active boss is known the kill is ignored and you can tick it off manually in the UI.
+- Boss kills are read from the golden "GEGNER GEFALLEN" / "GROSSER GEGNER GEFALLEN" ("ENEMY FELLED" / "GREAT ENEMY FELLED" in English) banner the game shows on a kill. The banner doesn't name the boss, so the kill is credited to the currently active boss (the name read above the health bar). No per-boss setup is needed; if no active boss is known the kill is ignored and you can tick it off manually in the UI.
+- The tracker UI has a DE/EN language toggle (button in the editor toolbox). Boss names are English by default with German aliases (`frontend/data/i18n.js`, `window.BOSS_ALIASES` in `frontend/data/bosses.js`); switching languages only changes what's displayed, not the underlying progress keys.
 
 ## Event types (all on `ws://127.0.0.1:8777`)
 
@@ -21,8 +22,9 @@ The components communicate over a local WebSocket bridge; the web UI listens and
 
 ## Quickstart - Web UI
 
-Run the bundled server (standard library only, no extra deps). It serves the
-web app and persists progress to a JSON file on disk:
+Run the bundled server (standard library only, no extra deps - no Node/npm
+required for this). It serves the web app and persists progress to a JSON
+file on disk:
 
 ```bash
 python3 backend/server.py
@@ -31,6 +33,33 @@ python3 backend/server.py
 
 Options: `--port 9000`, `--data /path/to/progress.json` (default
 `backend/data/progress.json`). Ctrl+C to stop.
+
+The frontend is plain static HTML/CSS/JS, so this works as-is straight from
+`frontend/`. If you've run `npm run build` (see Development below),
+`server.py` automatically serves the optimized `frontend/dist` build instead
+- same behavior, just with cache-busted assets.
+
+## Development
+
+The frontend has no build step for normal use, but a small [Vite](https://vitejs.dev)
+setup is available for a nicer dev loop (instant reload on save) and for
+producing a cache-busted production build:
+
+```bash
+npm install
+```
+
+- `npm run dev` - starts a Vite dev server with hot reload; edits to any
+  frontend file show up immediately. It proxies `/api/*` to `backend/server.py`
+  on port 8000, so run that alongside it for progress persistence:
+  ```bash
+  python3 backend/server.py   # terminal 1 - API only, still serves frontend/ if dist/ doesn't exist yet
+  npm run dev                 # terminal 2 - open the URL it prints
+  ```
+- `npm run build` - builds `frontend/dist` (hashed/cache-busted assets).
+  `python3 backend/server.py` picks it up automatically on the next start.
+- `npm run preview` - serves the last `npm run build` output standalone (no
+  Python needed, but also no `/api/*` persistence).
 
 ## Persistence
 
@@ -107,7 +136,7 @@ cd death_detector
 
 Install Tesseract (for Windows use the UB-Mannheim build) and ensure the German language data (`deu`) is installed; `eng` is normally bundled already. Either add the `tesseract` binary to your PATH or set the `tesseract_cmd` option in `backend/death_detector/config.json` to the full executable path.
 
-The death and kill-banner text (`phrases`/`felled_phrases` in config.json) are only matched in German — if you play with an English game client, the death/kill banners won't be detected, but active-boss detection (the health-bar name) recognizes both English and German boss names. Boss names are English by default in `frontend/data/bosses.js` (the canonical name used by the UI, localStorage and the detector); `window.BOSS_ALIASES` at the bottom of that file carries the matching German name per boss purely so the OCR detector also recognizes a German game client.
+The death phrase, kill-banner text and active-boss name (`phrases`/`felled_phrases`/boss names) are all matched in both German and English by default, so the detector works with either game client language without any config changes. Boss names are English by default in `frontend/data/bosses.js` (the canonical name used by the UI, localStorage and the detector); `window.BOSS_ALIASES` at the bottom of that file carries the matching German name per boss so the OCR detector also recognizes a German game client.
 
 ### Configure capture regions
 
@@ -135,14 +164,14 @@ The detector opens a WebSocket (default `ws://127.0.0.1:8777`) and emits `{type:
 
 - `backend/death_detector/config.json`: capture regions, OCR language, thresholds and cooldowns. Relevant kill keys:
   - `detect_kills`: turn boss-kill detection on/off.
-  - `felled_phrases` / `felled_key_token`: the kill-banner text to match (German defaults: `GEGNER GEFALLEN`, key token `GEFALLEN`).
+  - `felled_phrases` / `felled_key_token`: the kill-banner text to match (defaults: `GEGNER GEFALLEN` / `ENEMY FELLED` and their "GROSSER"/"GREAT" variants, key token `GEFALLEN`).
   - `felled_match_min_ratio`, `kill_cooldown_seconds`, `felled_gate_dark_ratio`, `felled_gate_gold_ratio`: matching/gating tuning.
 
 ### Troubleshooting
 
 - "Tesseract not found": install Tesseract and ensure `tesseract_cmd` or PATH is correct.
 - No deaths detected: run `--test` during a visible death screen, lower `match_min_ratio`, or widen `region`.
-- Kills not detected: run `--test` while the "GEGNER GEFALLEN" banner is on screen; lower `felled_match_min_ratio` or `felled_gate_gold_ratio` if the gate misses it.
+- Kills not detected: run `--test` while the "GEGNER GEFALLEN" / "ENEMY FELLED" banner is on screen; lower `felled_match_min_ratio` or `felled_gate_gold_ratio` if the gate misses it.
 - Kill detected but not attributed: make sure the active boss is set (the health-bar name was read, or pick it manually in the UI) before the banner appears.
 - False positives: increase the relevant `*_match_min_ratio` or tighten the region.
 - Active boss flicker: increase `active_boss_confirm_frames` in `backend/death_detector/config.json`.

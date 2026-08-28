@@ -2,9 +2,10 @@
 # ═══════════════════════════════════════════════════════════════════════════
 #  ELDEN RING — DEATH DETECTOR (OCR)
 #
-#  Watches the screen for the German death banner "DU BIST GESTORBEN" and
-#  emits one death event per occurrence over a local WebSocket. The Boss
-#  Tracker web app connects to that socket and calls ERTracker.registerDeath().
+#  Watches the screen for the death banner ("DU BIST GESTORBEN" / "YOU DIED",
+#  German or English) and emits one death event per occurrence over a local
+#  WebSocket. The Boss Tracker web app connects to that socket and calls
+#  ERTracker.registerDeath().
 #
 #  This only reads pixels from the screen (like any streamer death counter),
 #  so it is anti-cheat safe. It never touches the game process or memory.
@@ -54,7 +55,7 @@ def load_config():
         "region": None,
         "capture_fps": 3,
         "death_cooldown_seconds": 6.0,
-        "phrases": ["DU BIST GESTORBEN"],
+        "phrases": ["DU BIST GESTORBEN", "IHR SEID GESTORBEN", "YOU DIED"],
         "key_token": "GESTORBEN",
         "match_min_ratio": 0.8,
         "ocr_lang": "deu+eng",
@@ -64,7 +65,7 @@ def load_config():
         # Boss-kill detection (reads the golden "…GEGNER GEFALLEN" banner and
         # attributes the kill to the currently active boss).
         "detect_kills": True,
-        "felled_phrases": ["GROSSER GEGNER GEFALLEN", "GEGNER GEFALLEN"],
+        "felled_phrases": ["GROSSER GEGNER GEFALLEN", "GEGNER GEFALLEN", "GREAT ENEMY FELLED", "ENEMY FELLED"],
         "felled_key_token": "GEFALLEN",
         "felled_match_min_ratio": 0.8,
         "kill_cooldown_seconds": 8.0,
@@ -606,8 +607,9 @@ def main():
         sys.exit(
             "Tesseract OCR not found.\n"
             "Install it (Windows): https://github.com/UB-Mannheim/tesseract/wiki\n"
-            "Pick the German language data during setup, then either add it to PATH\n"
-            "or set \"tesseract_cmd\" in config.json to tesseract.exe."
+            "Pick the German language data during setup (English is bundled by\n"
+            "default), then either add it to PATH or set \"tesseract_cmd\" in\n"
+            "config.json to tesseract.exe."
         )
 
     if args.shot:

@@ -8,7 +8,7 @@
   "capture_fps": 3,
   "death_cooldown_seconds": 6.0,
 
-  "phrases": ["IHR SEID GESTORBEN", "DU BIST GESTORBEN"],
+  "phrases": ["IHR SEID GESTORBEN", "DU BIST GESTORBEN", "YOU DIED"],
   "key_token": "GESTORBEN",
   "match_min_ratio": 0.8,
 
@@ -19,7 +19,7 @@
   "gate_red_ratio": 0.0015,
 
   "detect_kills": true,
-  "felled_phrases": ["GROSSER GEGNER GEFALLEN", "GEGNER GEFALLEN"],
+  "felled_phrases": ["GROSSER GEGNER GEFALLEN", "GEGNER GEFALLEN", "GREAT ENEMY FELLED", "ENEMY FELLED"],
   "felled_key_token": "GEFALLEN",
   "felled_match_min_ratio": 0.8,
   "kill_cooldown_seconds": 8.0,
@@ -34,5 +34,5 @@
   "hb_gate_text_min": 0.001,
   "hb_gate_text_max": 0.5,
 
-  "debug": true
+  "debug": false
 }
