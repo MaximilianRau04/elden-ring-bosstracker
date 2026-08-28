@@ -28,7 +28,12 @@ import threading
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-WEB_ROOT = os.path.normpath(os.path.join(HERE, "..", "frontend"))
+FRONTEND_SRC  = os.path.normpath(os.path.join(HERE, "..", "frontend"))
+FRONTEND_DIST = os.path.join(FRONTEND_SRC, "dist")
+# Prefer the Vite production build (hashed filenames -> no stale-cache issues)
+# when it exists; otherwise fall back to the raw frontend/ source so the app
+# still works with zero setup (no Node/npm required).
+WEB_ROOT = FRONTEND_DIST if os.path.isdir(FRONTEND_DIST) else FRONTEND_SRC
 DEFAULT_DATA = os.path.join(HERE, "data", "progress.json")
 
 # Reads are lock-free, but writes go through this so two quick saves can't
@@ -62,20 +67,6 @@ def write_progress(path, obj):
             raise
 
 
-def _frontend_mtime():
-    """Return the highest mtime across all files in the frontend tree."""
-    latest = 0
-    for root, _dirs, files in os.walk(WEB_ROOT):
-        for f in files:
-            try:
-                t = os.path.getmtime(os.path.join(root, f))
-                if t > latest:
-                    latest = t
-            except OSError:
-                pass
-    return latest
-
-
 def make_handler(data_path):
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
@@ -98,9 +89,6 @@ def make_handler(data_path):
             p = self.path.split("?")[0]
             if p == "/api/progress":
                 self._send_json(200, read_progress(data_path))
-                return
-            if p == "/api/version":
-                self._send_json(200, {"v": _frontend_mtime()})
                 return
             super().do_GET()
 
