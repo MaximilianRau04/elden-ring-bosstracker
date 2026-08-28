@@ -5,7 +5,7 @@
 //  comes from AREA_EN below. Only the DISPLAYED text changes with the
 //  language — localStorage progress keys ("Area|Boss") always use the
 //  canonical (German area / English boss) strings, never the display label.
-//  Shared by the tracker (script.js) and the overlay (overlay.js).
+//  Shared by the tracker (js/*.js) and the overlay (overlay.js).
 // ═══════════════════════════════════════════════════════════════════════════
 
 (function () {

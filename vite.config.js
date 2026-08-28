@@ -17,7 +17,11 @@ const __dirname = fileURLToPath(new URL(".", import.meta.url));
 // the literal src="..." value so both index.html's and overlay/index.html's
 // (differently-relative) references to the same file are covered.
 const SCRIPT_REFS = [
-  ["script.js", "script.js"],
+  ["js/state.js", "js/state.js"],
+  ["js/panels.js", "js/panels.js"],
+  ["js/actions.js", "js/actions.js"],
+  ["js/render.js", "js/render.js"],
+  ["js/init.js", "js/init.js"],
   ["data/bosses.js", "data/bosses.js"],
   ["data/i18n.js", "data/i18n.js"],
   ["assets/chart.umd.min.js", "assets/chart.umd.min.js"],

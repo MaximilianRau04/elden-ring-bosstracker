@@ -2,7 +2,7 @@
 //  BOSS DATA
 //  Structure: list of areas in order. isDLC separates Base Game / DLC.
 //  Progress (defeated, deaths, pinned, date, level) is NOT stored here,
-//  but per user in localStorage (see script.js).
+//  but per user in localStorage (see js/state.js).
 //  Boss names are English (the primary key for UI, localStorage and the OCR
 //  detector). German names live in window.BOSS_ALIASES at the bottom, keyed
 //  by the English name, purely so the OCR detector also recognizes a German
