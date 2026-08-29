@@ -56,36 +56,13 @@
         <button class="etb-time-set-btn" onclick="toolboxSetElapsed()" data-tip="Timer auf diese Zeit setzen" data-i18n-tip="timer.setTip" data-tip-always="1">↵</button>
       </div>
 
-      <!-- BOSS TIMER -->
+      <!-- BOSS TIMER (automatic - follows the active boss, see activeBoss) -->
       <div class="etb-timer-divider"></div>
       <div class="etb-timer-section-label" data-i18n="timer.boss">Boss</div>
-      <input type="text" class="etb-timer-label-input" id="etb-boss-label"
-             placeholder="Bossname…" data-i18n-ph="timer.bossLabelPlaceholder"
-             oninput="bossTimerLabelChanged(this.value)">
-      <div class="etb-timer-display" id="etb-boss-timer-display">00:00:00</div>
-      <button class="etb-action-btn" id="etb-btn-BL1" onclick="toolboxToggleBossTimer()">
-        <span class="etb-btn-icon">▶</span><span class="etb-btn-text" data-i18n="timer.start">Start</span>
-      </button>
-      <button class="etb-action-btn etb-btn-reset" onclick="toolboxBossTimerReset()">
-        <span class="etb-btn-icon">↺</span><span class="etb-btn-text" data-i18n="timer.reset">Reset</span>
-      </button>
+      <div class="etb-timer-hint" data-i18n="timer.bossHint">läuft automatisch mit dem aktiven Boss</div>
       <button class="etb-action-btn etb-btn-toggle" id="etb-btn-BO1" onclick="toolboxToggleCell('BO1','etb-btn-BO1')">
         <span class="etb-btn-icon">👁</span><span class="etb-btn-text" data-i18n="timer.show">Einblenden</span>
       </button>
-      <div class="etb-time-set">
-        <input type="number" class="etb-time-input" id="etb-boss-elapsed-h"
-               min="0" max="99" placeholder="00"
-               onkeydown="if(event.key==='Enter')toolboxSetBossElapsed()">
-        <span class="etb-time-sep">:</span>
-        <input type="number" class="etb-time-input" id="etb-boss-elapsed-m"
-               min="0" max="59" placeholder="00"
-               onkeydown="if(event.key==='Enter')toolboxSetBossElapsed()">
-        <span class="etb-time-sep">:</span>
-        <input type="number" class="etb-time-input" id="etb-boss-elapsed-s"
-               min="0" max="59" placeholder="00"
-               onkeydown="if(event.key==='Enter')toolboxSetBossElapsed()">
-        <button class="etb-time-set-btn" onclick="toolboxSetBossElapsed()" data-tip="Boss-Timer auf diese Zeit setzen" data-i18n-tip="timer.bossSetTip" data-tip-always="1">↵</button>
-      </div>
     </div>
   </div>
 

@@ -143,15 +143,18 @@ function startTimerTick() {
   timerInterval = setInterval(updateTimerDisplay, 1000);
 }
 
+// Boss timer: shows time spent on the currently ACTIVE boss (persisted
+// timeSpent plus the live running session, see js/init.js setActiveBoss).
 function updateBossTimerDisplay() {
   var chip = document.getElementById("boss-timer-chip");
   if (!chip) return;
-  if (!bossTimerVisible) { chip.style.display = "none"; return; }
+  if (!bossTimerVisible || !activeBoss.boss) { chip.style.display = "none"; return; }
   chip.style.display = "flex";
-  var elapsed = bossTimerStartTs > 0 ? bossTimerElapsed + (Date.now() - bossTimerStartTs) : bossTimerElapsed;
+  var p = getBossProgress(activeBoss.area, activeBoss.boss);
+  var elapsed = (p.timeSpent || 0) + (activeBossSessionStartTs > 0 ? Date.now() - activeBossSessionStartTs : 0);
   document.getElementById("val-boss-timer").textContent = fmtTime(elapsed);
   var labelEl = document.getElementById("val-boss-timer-label");
-  if (labelEl) labelEl.textContent = bossTimerLabel ? bossTimerLabel + ":" : I18N.t("timer.bossDefaultLabel");
+  if (labelEl) labelEl.textContent = I18N.bossLabel(activeBoss.boss) + ":";
 }
 
 function startBossTimerTick() {

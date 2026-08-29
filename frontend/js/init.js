@@ -6,9 +6,18 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 function setActiveBoss(area, boss) {
+  flushActiveBossTime(); // book the outgoing boss's elapsed time before switching
   activeBoss = { area: area, boss: boss };
+  if (area && boss) {
+    activeBossSessionStartTs = Date.now();
+    if (bossTimerVisible) startBossTimerTick();
+  } else if (bossTimerInterval) {
+    clearInterval(bossTimerInterval);
+    bossTimerInterval = null;
+  }
   saveProgress();
   updateActiveBossDisplay();
+  updateBossTimerDisplay();
 }
 
 function clearActiveBoss() {
@@ -173,14 +182,13 @@ function init() {
   toolboxSyncFilterButtons();
   toolboxSyncOverlayButtons();
   toolboxSyncTimerUI();
-  toolboxSyncBossTimerUI();
   toolboxSyncBossTimerVisBtn();
 
   updateTimerDisplay();
   if (timerVisible && timerStartTs > 0) startTimerTick();
 
   updateBossTimerDisplay();
-  if (bossTimerVisible && bossTimerStartTs > 0) startBossTimerTick();
+  if (bossTimerVisible && activeBoss.boss) startBossTimerTick();
 
   updateActiveBossDisplay();
 

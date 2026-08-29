@@ -48,10 +48,8 @@
       "timer.hide": "Ausblenden",
       "timer.setTip": "Timer auf diese Zeit setzen",
       "timer.boss": "Boss",
-      "timer.bossLabelPlaceholder": "Bossname…",
-      "timer.bossSetTip": "Boss-Timer auf diese Zeit setzen",
+      "timer.bossHint": "läuft automatisch mit dem aktiven Boss",
       "timer.defaultLabel": "Timer:",
-      "timer.bossDefaultLabel": "Boss:",
       "filter.title": "Filter",
       "filter.openOnly": "Nur Offen",
       "filter.doneOnly": "Nur Erledigt",
@@ -126,7 +124,6 @@
       "bossLevel.scaduLvlBadge": "Scadu-Lvl.",
       "editHint": "Bearbeiten",
       "toast.timerSet": "⏱ Timer gesetzt: {0}",
-      "toast.bossTimerSet": "⏱ Boss-Timer gesetzt: {0}",
       "toast.activeCleared": "🎯 Aktiver Boss aufgehoben",
       "toast.activeSet": "🎯 Aktiver Boss: {0}",
       "toast.bossDefeated": "✔ {0} besiegt!",
@@ -139,8 +136,7 @@
       "overlay.bosses": "🏆 Bosse: {0} / {1}",
       "overlay.topTitle": "💀 TOP 10 - MEISTE TODE",
       "overlay.victoryText": "BOSS ERLEDIGT",
-      "overlay.timerLabel": "Timer",
-      "overlay.bossLabel": "Boss"
+      "overlay.timerLabel": "Timer"
     },
     en: {
       "subtitle": "Boss Tracker &amp; Progress Overview",
@@ -157,10 +153,8 @@
       "timer.hide": "Hide",
       "timer.setTip": "Set timer to this time",
       "timer.boss": "Boss",
-      "timer.bossLabelPlaceholder": "Boss name…",
-      "timer.bossSetTip": "Set boss timer to this time",
+      "timer.bossHint": "runs automatically with the active boss",
       "timer.defaultLabel": "Timer:",
-      "timer.bossDefaultLabel": "Boss:",
       "filter.title": "Filter",
       "filter.openOnly": "Open Only",
       "filter.doneOnly": "Done Only",
@@ -235,7 +229,6 @@
       "bossLevel.scaduLvlBadge": "Scadu Lvl.",
       "editHint": "Edit",
       "toast.timerSet": "⏱ Timer set: {0}",
-      "toast.bossTimerSet": "⏱ Boss timer set: {0}",
       "toast.activeCleared": "🎯 Active boss cleared",
       "toast.activeSet": "🎯 Active boss: {0}",
       "toast.bossDefeated": "✔ {0} defeated!",
@@ -248,8 +241,7 @@
       "overlay.bosses": "🏆 Bosses: {0} / {1}",
       "overlay.topTitle": "💀 TOP 10 - MOST DEATHS",
       "overlay.victoryText": "BOSS DEFEATED",
-      "overlay.timerLabel": "Timer",
-      "overlay.bossLabel": "Boss"
+      "overlay.timerLabel": "Timer"
     }
   };
 

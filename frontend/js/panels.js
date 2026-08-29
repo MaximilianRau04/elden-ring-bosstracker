@@ -132,21 +132,6 @@ function toolboxFillTimeInputs() {
 
   var lEl = document.getElementById('etb-general-label');
   if (lEl && document.activeElement !== lEl) lEl.value = timerLabel;
-
-  var bms  = bossTimerStartTs > 0 ? bossTimerElapsed + (Date.now() - bossTimerStartTs) : bossTimerElapsed;
-  var bs   = Math.floor(bms / 1000);
-  var bh   = Math.floor(bs / 3600);
-  var bm   = Math.floor((bs % 3600) / 60);
-  var bsec = bs % 60;
-  var bhEl = document.getElementById('etb-boss-elapsed-h');
-  var bmEl = document.getElementById('etb-boss-elapsed-m');
-  var bsEl = document.getElementById('etb-boss-elapsed-s');
-  if (bhEl) bhEl.value = bh > 0 ? bh : '';
-  if (bmEl) bmEl.value = bm > 0 ? bm : '';
-  if (bsEl) bsEl.value = bsec > 0 ? bsec : '';
-
-  var blEl = document.getElementById('etb-boss-label');
-  if (blEl && document.activeElement !== blEl) blEl.value = bossTimerLabel;
 }
 
 function toolboxSetElapsed() {
@@ -194,7 +179,7 @@ function toolboxToggleCell(cell, btnId) {
   if (cell === 'BO1') {
     bossTimerVisible = !bossTimerVisible;
     updateBossTimerDisplay();
-    if (bossTimerVisible && bossTimerStartTs > 0) startBossTimerTick();
+    if (bossTimerVisible && activeBoss.boss) startBossTimerTick();
     else if (!bossTimerVisible && bossTimerInterval) { clearInterval(bossTimerInterval); bossTimerInterval = null; }
     toolboxSyncBossTimerVisBtn();
     saveProgress();
@@ -207,12 +192,6 @@ function toolboxToggleCell(cell, btnId) {
 function timerLabelChanged(val) {
   timerLabel = val.trim();
   updateTimerDisplay();
-  saveProgress();
-}
-
-function bossTimerLabelChanged(val) {
-  bossTimerLabel = val.trim();
-  updateBossTimerDisplay();
   saveProgress();
 }
 
@@ -304,66 +283,6 @@ function toolboxUpdateTimerDisplay() {
   var disp = document.getElementById("etb-timer-display");
   if (!disp) return;
   var ms = timerStartTs > 0 ? timerElapsed + (Date.now() - timerStartTs) : timerElapsed;
-  disp.textContent = fmtTime(ms);
-}
-
-// Boss-Timer toolbox functions
-function toolboxToggleBossTimer() {
-  if (bossTimerStartTs > 0) {
-    bossTimerElapsed += Date.now() - bossTimerStartTs;
-    bossTimerStartTs = 0;
-    if (bossTimerInterval) { clearInterval(bossTimerInterval); bossTimerInterval = null; }
-  } else {
-    bossTimerStartTs = Date.now();
-    startBossTimerTick();
-  }
-  saveProgress();
-  updateBossTimerDisplay();
-  toolboxSyncBossTimerUI();
-}
-
-function toolboxBossTimerReset() {
-  bossTimerStartTs = 0;
-  bossTimerElapsed = 0;
-  if (bossTimerInterval) { clearInterval(bossTimerInterval); bossTimerInterval = null; }
-  saveProgress();
-  updateBossTimerDisplay();
-  toolboxSyncBossTimerUI();
-}
-
-function toolboxSetBossElapsed() {
-  var h   = Math.max(0, parseInt(document.getElementById('etb-boss-elapsed-h').value) || 0);
-  var m   = Math.max(0, Math.min(59, parseInt(document.getElementById('etb-boss-elapsed-m').value) || 0));
-  var s   = Math.max(0, Math.min(59, parseInt(document.getElementById('etb-boss-elapsed-s').value) || 0));
-  var ms  = (h * 3600 + m * 60 + s) * 1000;
-  bossTimerElapsed = ms;
-  if (bossTimerStartTs > 0) bossTimerStartTs = Date.now();
-  saveProgress();
-  updateBossTimerDisplay();
-  toolboxSyncBossTimerUI();
-  showToast(I18N.tf("toast.bossTimerSet", fmtTime(ms)), 2000);
-}
-
-function toolboxSyncBossTimerUI() {
-  var btn  = document.getElementById("etb-btn-BL1");
-  var disp = document.getElementById("etb-boss-timer-display");
-  if (!btn || !disp) return;
-  var running = bossTimerStartTs > 0;
-  btn.classList.toggle("timer-running", running);
-  var iconEl = btn.querySelector(".etb-btn-icon");
-  var textEl = btn.querySelector(".etb-btn-text");
-  if (iconEl) iconEl.textContent = running ? "⏸" : "▶";
-  if (textEl) textEl.textContent = running ? I18N.t("timer.pause") : I18N.t("timer.start");
-  disp.classList.toggle("running", running);
-  if (bossToolboxTick) clearInterval(bossToolboxTick);
-  if (running) bossToolboxTick = setInterval(toolboxUpdateBossTimerDisplay, 500);
-  toolboxUpdateBossTimerDisplay();
-}
-
-function toolboxUpdateBossTimerDisplay() {
-  var disp = document.getElementById("etb-boss-timer-display");
-  if (!disp) return;
-  var ms = bossTimerStartTs > 0 ? bossTimerElapsed + (Date.now() - bossTimerStartTs) : bossTimerElapsed;
   disp.textContent = fmtTime(ms);
 }
 

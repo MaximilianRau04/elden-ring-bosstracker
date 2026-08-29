@@ -217,6 +217,15 @@ body.editor-mode { padding-left: 0; }
   margin: 10px 0 8px;
 }
 
+.etb-timer-hint {
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-style: italic;
+  font-size: 11px;
+  color: var(--parchment-dim);
+  opacity: 0.6;
+  margin: -2px 0 8px;
+}
+
 .etb-timer-label-input {
   width: 100%;
   box-sizing: border-box;

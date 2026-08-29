@@ -50,13 +50,13 @@ var timerVisible  = false;
 var timerInterval = null;
 var timerLabel    = "";
 
-// Boss-Timer
-var bossTimerStartTs  = 0;
-var bossTimerElapsed  = 0;
-var bossTimerVisible  = false;
-var bossTimerInterval = null;
-var bossTimerLabel    = "";
-var bossToolboxTick   = null;
+// Boss-Timer: shows time spent on the currently ACTIVE boss (see activeBoss
+// below). Automatic - starts/stops as activeBoss changes (js/init.js), the
+// accumulated time per boss is stored on that boss's progress record
+// (getBossProgress().timeSpent). bossTimerVisible only toggles the widget.
+var bossTimerVisible       = false;
+var bossTimerInterval      = null;
+var activeBossSessionStartTs = 0; // Date.now() while a boss is active, else 0
 
 // Active boss (for automation: deaths/kills get assigned to it)
 var activeBoss = { area: null, boss: null };
@@ -79,7 +79,8 @@ var PROGRESS = {
   ui: { showBase: true, showDLC: true, showOnlyMain: false, showOnlyDone: false, showOnlyOpen: false },
   collapsed: {},
   timer: { startTs: 0, elapsed: 0, visible: false, label: "" },
-  bossTimer: { startTs: 0, elapsed: 0, visible: false, label: "" },
+  bossTimer: { visible: false },
+  activeBossSessionStartTs: 0,
   activeBoss: { area: null, boss: null },
   overlay: { deaths: true, progress: true, pinned: true, list: true, victory: true }
 };
@@ -96,6 +97,7 @@ function loadProgress() {
       PROGRESS.collapsed   = parsed.collapsed   || {};
       PROGRESS.timer       = parsed.timer       || PROGRESS.timer;
       PROGRESS.bossTimer   = parsed.bossTimer   || PROGRESS.bossTimer;
+      PROGRESS.activeBossSessionStartTs = parsed.activeBossSessionStartTs || 0;
       PROGRESS.activeBoss  = parsed.activeBoss  || { area: null, boss: null };
       PROGRESS.overlay     = Object.assign({ deaths: true, progress: true, pinned: true, list: true, victory: true }, parsed.overlay || {});
     }
@@ -113,10 +115,8 @@ function loadProgress() {
   timerElapsed   = PROGRESS.timer.elapsed || 0;
   timerVisible   = !!PROGRESS.timer.visible;
   timerLabel     = PROGRESS.timer.label || "";
-  bossTimerStartTs  = PROGRESS.bossTimer.startTs || 0;
-  bossTimerElapsed  = PROGRESS.bossTimer.elapsed || 0;
   bossTimerVisible  = !!PROGRESS.bossTimer.visible;
-  bossTimerLabel    = PROGRESS.bossTimer.label || "";
+  activeBossSessionStartTs = PROGRESS.activeBossSessionStartTs || 0;
   activeBoss     = PROGRESS.activeBoss || { area: null, boss: null };
   overlayCfg     = Object.assign({ deaths: true, progress: true, pinned: true, list: true, victory: true }, PROGRESS.overlay || {});
 
@@ -127,8 +127,9 @@ function saveProgress() {
   PROGRESS.fieldDeaths = fieldDeaths;
   PROGRESS.ui = { showBase: showBase, showDLC: showDLC, showOnlyMain: showOnlyMain, showOnlyDone: showOnlyDone, showOnlyOpen: showOnlyOpen };
   PROGRESS.collapsed = localCollapsed;
-  PROGRESS.timer     = { startTs: timerStartTs,     elapsed: timerElapsed,     visible: timerVisible,     label: timerLabel };
-  PROGRESS.bossTimer = { startTs: bossTimerStartTs, elapsed: bossTimerElapsed, visible: bossTimerVisible, label: bossTimerLabel };
+  PROGRESS.timer     = { startTs: timerStartTs, elapsed: timerElapsed, visible: timerVisible, label: timerLabel };
+  PROGRESS.bossTimer = { visible: bossTimerVisible };
+  PROGRESS.activeBossSessionStartTs = activeBossSessionStartTs;
   PROGRESS.activeBoss = activeBoss;
   PROGRESS.overlay = overlayCfg;
   try {
@@ -188,9 +189,20 @@ function bootstrapStorage() {
 function getBossProgress(area, boss) {
   var key = area + "|" + boss;
   if (!PROGRESS.bosses[key]) {
-    PROGRESS.bosses[key] = { done: false, deaths: 0, pinned: false, level: null, date: null };
+    PROGRESS.bosses[key] = { done: false, deaths: 0, pinned: false, level: null, date: null, timeSpent: 0 };
   }
   return PROGRESS.bosses[key];
+}
+
+// Rolls the current active-boss session into that boss's timeSpent. Called
+// before activeBoss changes (js/init.js setActiveBoss) so the elapsed time
+// is booked to the boss that was actually being fought.
+function flushActiveBossTime() {
+  if (activeBoss.boss && activeBoss.area && activeBossSessionStartTs > 0) {
+    var p = getBossProgress(activeBoss.area, activeBoss.boss);
+    p.timeSpent = (p.timeSpent || 0) + (Date.now() - activeBossSessionStartTs);
+  }
+  activeBossSessionStartTs = 0;
 }
 
 // This build is always "Editor" (local single-user).
@@ -263,7 +275,6 @@ function toggleLanguage() {
   toolboxSyncTimerVisBtn();
   toolboxSyncBossTimerVisBtn();
   toolboxSyncTimerUI();
-  toolboxSyncBossTimerUI();
   updateTimerDisplay();
   updateBossTimerDisplay();
   updateActiveBossDisplay();

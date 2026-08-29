@@ -92,11 +92,14 @@ let generalTimerElapsed = 0;
 let generalTimerVisible = false;
 let generalTimerLabel   = I18N.t("overlay.timerLabel");
 
-let bossTimerStartTs    = 0;
-let bossTimerElapsed    = 0;
-let bossTimerVisible    = false;
-let bossTimerLabel      = I18N.t("overlay.bossLabel");
-let currentBossDeaths   = null; // null = kein Match, 0+ = gefundener Boss
+// Boss timer: time spent on the currently ACTIVE boss (js/init.js
+// setActiveBoss). null area/boss = no boss currently active.
+let bossTimerVisible         = false;
+let activeBossArea           = null;
+let activeBossName           = null;
+let activeBossSessionStartTs = 0;
+let activeBossTimeSpent      = 0;
+let activeBossDeaths         = 0;
 
 function fmtOverlayTime(ms) {
   const diff    = Math.floor(ms / 1000);
@@ -122,14 +125,11 @@ function updateTimerDisplays() {
   }
 
   if (bossEl) {
-    const show = activeConfig.bossTimer && bossTimerVisible;
+    const show = activeConfig.bossTimer && bossTimerVisible && !!activeBossName;
     bossEl.style.display = show ? "block" : "none";
     if (show) {
-      const ms = bossTimerStartTs > 0
-        ? bossTimerElapsed + (Date.now() - bossTimerStartTs)
-        : bossTimerElapsed;
-      const deathsSuffix = currentBossDeaths !== null ? `  · † ${currentBossDeaths}` : "";
-      bossEl.innerText = `⏳ ${bossTimerLabel}: ${fmtOverlayTime(ms)}${deathsSuffix}`;
+      const ms = activeBossTimeSpent + (activeBossSessionStartTs > 0 ? Date.now() - activeBossSessionStartTs : 0);
+      bossEl.innerText = `🎯 ${I18N.bossLabel(activeBossName)} · ${fmtOverlayTime(ms)} · † ${activeBossDeaths}`;
     }
   }
 }
@@ -214,10 +214,18 @@ async function loadData() {
   generalTimerVisible = !!timer.visible;
   generalTimerLabel   = (timer.label || "").trim() || I18N.t("overlay.timerLabel");
 
-  bossTimerStartTs = Number(bossTimer.startTs) || 0;
-  bossTimerElapsed = Number(bossTimer.elapsed) || 0;
-  bossTimerVisible = !!bossTimer.visible;
-  bossTimerLabel   = (bossTimer.label || "").trim() || I18N.t("overlay.bossLabel");
+  bossTimerVisible         = !!bossTimer.visible;
+  activeBossArea           = (progress.activeBoss && progress.activeBoss.area) || null;
+  activeBossName           = (progress.activeBoss && progress.activeBoss.boss) || null;
+  activeBossSessionStartTs = Number(progress.activeBossSessionStartTs) || 0;
+  if (activeBossArea && activeBossName) {
+    const abp = prog[activeBossArea + "|" + activeBossName] || {};
+    activeBossTimeSpent = Number(abp.timeSpent) || 0;
+    activeBossDeaths    = Number(abp.deaths) || 0;
+  } else {
+    activeBossTimeSpent = 0;
+    activeBossDeaths    = 0;
+  }
 
   const normalize  = str => str.trim().toLowerCase().replace(/\s+/g, " ");
   const isMainBoss = name => MAIN_BOSSES.map(normalize).includes(normalize(name));
@@ -270,16 +278,6 @@ async function loadData() {
       areas[area].bosses.push({ boss, done, deaths, pinned });
     });
   });
-
-  // current boss deaths (matched by bossTimerLabel)
-  const rawLabel = (bossTimer.label || "").trim();
-  if (rawLabel) {
-    const normLabel = normalize(rawLabel);
-    const found = allBossesFlat.find(b => normalize(b.boss) === normLabel);
-    currentBossDeaths = found ? found.deaths : null;
-  } else {
-    currentBossDeaths = null;
-  }
 
   // total deaths = boss deaths + field deaths (matches the tracker)
   let fd = 0;
