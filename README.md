@@ -7,6 +7,8 @@ This repository contains two cooperating parts:
 
 The components communicate over a local WebSocket bridge; the web UI listens and reacts to the events described below.
 
+![Boss tracker web UI](docs/screenshots/tracker.webp)
+
 
 ## Design notes
 
@@ -73,6 +75,8 @@ npm install
   `python3 -m http.server`), in which case progress lives only in localStorage.
 
 ## Stream Overlay (frontend/overlay)
+
+<img src="docs/screenshots/overlay.webp" alt="Stream overlay" width="280" />
 
 A transparent overlay for OBS that mirrors the tracker's progress (deaths, boss
 completion, pinned bosses, timer) with kill animations. It is a read-only view
